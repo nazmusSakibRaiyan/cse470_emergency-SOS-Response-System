@@ -1,57 +1,127 @@
-import { useState } from "react";
-import axios from "axios";
-import { toast } from "react-toastify";
+// src/components/Login.js
+
+import React, { useState } from "react";
+import { useAuth } from "../context/AuthContext"; // Import useAuth hook
 import { useNavigate } from "react-router-dom";
-import TwoFactorAuth from "../components/TwoFactorAuth";
+import { toast } from "react-hot-toast";
 
 const Login = () => {
-  const [formData, setFormData] = useState({ email: "", password: "" });
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth(); // Destructure login from AuthContext
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // Handle input change
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleLogin = async () => {
+    setLoading(true);
+    try {
+      const baseURI = process.env.NODE_ENV === "development" ? "http://localhost:5000" : "";
+      const res = await fetch(baseURI + "/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (res.ok) {
+        setOtpSent(true);
+        toast.success("OTP sent to your email!");
+      } else {
+        toast.error("Invalid login credentials.");
+      }
+    } catch (error) {
+      toast.error("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleVerifyOTP = async () => {
+    setLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", formData);
-      toast.success("Login successful!");
-      localStorage.setItem("token", res.data.token);
-      navigate("/dashboard"); // Redirect after login
+      const baseURI = process.env.NODE_ENV === "development" ? "http://localhost:5000" : "";
+      const res = await fetch(baseURI + "/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
+      });
+
+      const data = await res.json();
+      if (data.token) {
+        login(data.token, data.user);
+        navigate("/dashboard");
+        toast.success("Login successful!");
+      } else {
+        toast.error("Invalid OTP. Please try again.");
+      }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Login failed!");
+      toast.error("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-96">
-        <h2 className="text-2xl font-semibold mb-6 text-center">Login</h2>
-        {!isAuthenticated ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input type="email" name="email" placeholder="Email" onChange={handleChange} className="w-full p-2 border rounded" required />
-            <input type="password" name="password" placeholder="Password" onChange={handleChange} className="w-full p-2 border rounded" required />
-            <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Login</button>
-          </form>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4">
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">
+        {otpSent ? "Enter OTP" : "Login"}
+      </h1>
+
+      <div className="bg-white p-8 shadow-lg rounded-lg w-full max-w-sm">
+        {!otpSent ? (
+          <>
+            <input
+              name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email Address"
+              className="border p-3 w-full mb-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+            <input
+              type="password"
+              name="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              className="border p-3 w-full mb-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+            <button
+              onClick={handleLogin}
+              className={`w-full py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition ${
+                loading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              disabled={loading}
+            >
+              {loading ? "Sending OTP..." : "Send OTP"}
+            </button>
+          </>
         ) : (
-          <TwoFactorAuth email={formData.email} onVerified={() => navigate("/dashboard")} />
+          <>
+            <input
+              name="otp"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              placeholder="Enter OTP"
+              className="border p-3 w-full mb-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              required
+            />
+            <button
+              onClick={handleVerifyOTP}
+              className={`w-full py-3 rounded-lg bg-green-600 text-white hover:bg-green-700 transition ${
+                loading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              disabled={loading}
+            >
+              {loading ? "Verifying OTP..." : "Verify OTP"}
+            </button>
+          </>
         )}
-      </div>
-      <div>
-     
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="email" name="email" placeholder="Email" onChange={handleChange} className="w-full p-2 border rounded" required />
-          <input type="password" name="password" placeholder="Password" onChange={handleChange} className="w-full p-2 border rounded" required />
-          <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Login</button>
-        </form>
       </div>
     </div>
   );
 };
 
 export default Login;
-

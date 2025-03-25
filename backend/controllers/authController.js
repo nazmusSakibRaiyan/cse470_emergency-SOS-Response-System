@@ -1,12 +1,12 @@
-import speakeasy from "speakeasy";
-import qrcode from "qrcode";
-import bcrypt from "bcryptjs";
-import User from "../models/User.js";
-import Otp from "../models/Otp.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import User from "../models/user.js";
 import nodemailer from "nodemailer";
-import twilio from "twilio";
+import dotenv from "dotenv";
 
-// Nodemailer setup
+dotenv.config();
+
+// Nodemailer Setup
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -15,97 +15,130 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Twilio setup
-const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+// Generate OTP
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-// Send OTP via email & SMS
-export const sendOtp = async (req, res) => {
-  const { email, phone } = req.body;
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // OTP expires in 5 mins
-
+// Register User
+export const register = async (req, res) => {
   try {
-    // Remove old OTPs if any
-    await Otp.deleteOne({ email });
+    const { name, email, password, phone, role, address, nid } = req.body;
 
-    // Save the new OTP to DB
-    const newOtp = new Otp({ email, otp, expiresAt });
-    await newOtp.save();
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ message: "User already exists" });
 
-    // Send OTP via email
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    const newUser = new User({ name, email, password: hashedPassword, phone, role, address, nid });
+    await newUser.save();
+
+    // Send Welcome Email
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Welcome to SOS",
+      text: `Hi ${name},\n\nThank you for registering on SOS! We're excited to have you on board.\n\nBest Regards,\nSOS Team`,
+    });
+
+    res.status(201).json({ message: "User registered successfully. Please login." });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+// Login (Step 1) - Validate Email & Password, Send OTP
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+
+    // Generate OTP
+    const otp = generateOTP();
+    user.otp = otp;
+    user.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiry
+    await user.save();
+
+    // Send OTP via Email
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
       subject: "Your OTP Code",
-      text: `Your OTP is ${otp}. It will expire in 5 minutes.`,
+      text: `Your OTP is: ${otp}. This OTP is valid for 5 minutes.`,
     });
 
-    // Send OTP via SMS
-    if (phone) {
-      await twilioClient.messages.create({
-        body: `Your OTP is ${otp}. It will expire in 5 minutes.`,
-        from: process.env.TWILIO_PHONE_NUMBER,
-        to: phone,
-      });
-    }
-
-    res.status(200).json({ message: "OTP sent successfully via email & SMS" });
+    res.status(200).json({ message: "OTP sent to email. Please verify OTP to login." });
   } catch (error) {
-    res.status(500).json({ message: "Failed to send OTP", error: error.message });
+    res.status(500).json({ message: "Server error", error });
   }
 };
 
-// Enable Google Authenticator (2FA)
-export const enable2FA = async (req, res) => {
-  const { email } = req.body;
-
+// Verify OTP & Generate JWT Token (Step 2)
+export const verifyOTP = async (req, res) => {
   try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    const { email, otp } = req.body;
 
-    // Generate secret for Google Authenticator
-    const secret = speakeasy.generateSecret({ length: 20 });
-    user.googleAuthSecret = secret.base32;
-    user.isTwoFactorEnabled = true;
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    // Check OTP
+    if (user.otp !== otp || user.otpExpires < Date.now()) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    // Generate JWT Token
+    const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    // Clear OTP
+    user.otp = null;
+    user.otpExpires = null;
     await user.save();
 
-    // Generate QR code
-    const qrCodeUrl = await qrcode.toDataURL(secret.otpauth_url);
-
+    // Send back the token and user details (excluding sensitive info)
     res.status(200).json({
-      message: "2FA enabled successfully",
-      qrCodeUrl,
-      secret: secret.base32,
+      message: "Login successful",
+      token,
+      user: {
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        address: user.address,
+        nid: user.nid,
+      },
     });
   } catch (error) {
-    res.status(500).json({ message: "Error enabling 2FA", error: error.message });
+    res.status(500).json({ message: "Server error", error });
   }
 };
 
-// Verify OTP for Google Authenticator
-export const verify2FA = async (req, res) => {
-  const { email, token } = req.body;
 
+// Get User Info (Protected Route)
+export const getUser = async (req, res) => {
   try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    // req.user is set by authMiddleware after decoding the token
+    const user = await User.findById(req.user.userId).select("-password"); // Exclude password field
 
-    if (!user.isTwoFactorEnabled)
-      return res.status(400).json({ message: "Two-Factor Authentication not enabled" });
-
-    // Verify OTP
-    const isVerified = speakeasy.totp.verify({
-      secret: user.googleAuthSecret,
-      encoding: "base32",
-      token,
-    });
-
-    if (isVerified) {
-      res.status(200).json({ message: "OTP verified!" });
-    } else {
-      res.status(400).json({ message: "Invalid OTP" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
+
+    // Return the user info
+    res.status(200).json({ user });
   } catch (error) {
-    res.status(500).json({ message: "Error verifying 2FA", error: error.message });
+    console.error(error);
+    res.status(500).json({ message: "Server error", error });
   }
 };
