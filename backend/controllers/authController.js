@@ -23,7 +23,7 @@ export const register = async (req, res) => {
   try {
     const { name, email, password, phone, role, address, nid } = req.body;
 
-    // Check if user already exists
+
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ message: "User already exists" });
 
@@ -49,7 +49,7 @@ export const register = async (req, res) => {
   }
 };
 
-// Login (Step 1) - Validate Email & Password, Send OTP
+// Login 
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -100,6 +100,7 @@ export const verifyOTP = async (req, res) => {
     const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
+    console.log("Generated Token:", token); 
 
     // Clear OTP
     user.otp = null;
@@ -129,16 +130,31 @@ export const verifyOTP = async (req, res) => {
 export const getUser = async (req, res) => {
   try {
     // req.user is set by authMiddleware after decoding the token
-    const user = await User.findById(req.user.userId).select("-password"); // Exclude password field
+    const user = await User.findById(req.user.userId).select("-password"); 
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Return the user info
+
     res.status(200).json({ user });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error", error });
   }
 };
+
+// Delete User Account
+export const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({ message: "Your account has been deleted successfully." });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
