@@ -18,7 +18,10 @@ const Navbar = () => {
 
 	useEffect(() => {
 		const handleClickOutside = (event) => {
-			if (adminDropdownRef.current && !adminDropdownRef.current.contains(event.target)) {
+			if (
+				adminDropdownRef.current &&
+				!adminDropdownRef.current.contains(event.target)
+			) {
 				closeAdminDropdown();
 			}
 		};
@@ -57,46 +60,97 @@ const Navbar = () => {
 						<Link to="/sos" className="mx-2">
 							SOS
 						</Link>
-						<Link to="/chat-list" className="mx-2">
+						<Link to="/chats" className="mx-2">
 							Chats
 						</Link>
-						
+
 						{user.role === "admin" && (
 							<>
-								<div className="relative group mx-2" ref={adminDropdownRef}>
-									<button className="flex items-center" onClick={toggleAdminDropdown}>
+								<div
+									className="relative group mx-2"
+									ref={adminDropdownRef}
+								>
+									<button
+										className="flex items-center"
+										onClick={toggleAdminDropdown}
+									>
 										Admin
-										<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											className="h-4 w-4 ml-1"
+											fill="none"
+											viewBox="0 0 24 24"
+											stroke="currentColor"
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												strokeWidth={2}
+												d="M19 9l-7 7-7-7"
+											/>
 										</svg>
 									</button>
-									<div className={`absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 ${isAdminDropdownOpen ? 'block' : 'hidden'}`}>
-										<Link to="/user-approvals" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={closeAdminDropdown}>
+									<div
+										className={`absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 ${
+											isAdminDropdownOpen
+												? "block"
+												: "hidden"
+										}`}
+									>
+										<Link
+											to="/user-approvals"
+											className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+											onClick={closeAdminDropdown}
+										>
 											User Approvals
 										</Link>
-										<Link to="/user-management" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={closeAdminDropdown}>
+										<Link
+											to="/user-management"
+											className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+											onClick={closeAdminDropdown}
+										>
 											User Management
 										</Link>
-										<Link to="/blacklisted-users" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={closeAdminDropdown}>
+										<Link
+											to="/blacklisted-users"
+											className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+											onClick={closeAdminDropdown}
+										>
 											Blacklist Users
 										</Link>
-										<Link to="/active-sos" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={closeAdminDropdown}>
+										<Link
+											to="/active-sos"
+											className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+											onClick={closeAdminDropdown}
+										>
 											Monitor Active SOS
 										</Link>
-										<Link to="/safety-reports" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={closeAdminDropdown}>
+										<Link
+											to="/safety-reports"
+											className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+											onClick={closeAdminDropdown}
+										>
 											Safety Reports
 										</Link>
-										<Link to="/broadcast" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={closeAdminDropdown}>
+										<Link
+											to="/broadcast"
+											className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+											onClick={closeAdminDropdown}
+										>
 											Emergency Broadcast
 										</Link>
-										<Link to="/volunteer-verification" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={closeAdminDropdown}>
+										<Link
+											to="/volunteer-verification"
+											className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+											onClick={closeAdminDropdown}
+										>
 											Verify Volunteers
 										</Link>
 									</div>
 								</div>
 							</>
 						)}
-						
+
 						{user.role === "volunteer" && (
 							<>
 								<Link to="/alert" className="mx-2">

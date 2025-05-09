@@ -9,18 +9,17 @@ import userRoute from "./routes/userRoute.js";
 import { Server } from "socket.io";
 import User from "./models/user.js";
 import SOS from "./models/SOS.js";
-import Chat from "./models/Chat.js";
 import Notification from "./models/Notification.js";
 
 import broadcastRoutes from "./routes/broadcastRoutes.js";
 import userManagementRoutes from "./routes/userManagementRoutes.js";
 import blacklistUserRoutes from "./routes/blacklistUserRoutes.js";
-import chatRoutes from "./routes/chatRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import { sendPendingResponseReminders } from "./controllers/notificationController.js";
 
 import feedbackRoutes from "./routes/feedbackRoutes.js";
-
+import Chat from "./models/Chat.js";
+import { authMiddleware } from "./middleware/authMiddleware.js";
 
 dotenv.config();
 
@@ -41,7 +40,6 @@ app.use("/api/user", userRoute);
 app.use("/api/broadcast", broadcastRoutes);
 app.use("/api/user-management", userManagementRoutes);
 app.use("/api/blacklist-users", blacklistUserRoutes);
-app.use("/api/chat", chatRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/feedback", feedbackRoutes);
 
@@ -57,6 +55,9 @@ const io = new Server(server, {
 	},
 });
 
+// Attach io to the app object
+app.set("io", io);
+
 io.on("connection", (socket) => {
 	console.log("A user connected:", socket.id);
 
@@ -64,12 +65,17 @@ io.on("connection", (socket) => {
 	socket.on("authenticate", async ({ userId }) => {
 		try {
 			if (!userId) return;
-			
+
 			const user = await User.findById(userId);
 			if (user) {
 				user.socketId = socket.id;
 				await user.save();
-				console.log(`User ${userId} authenticated with socket ${socket.id}`);
+				console.log(
+					`User ${userId} authenticated with socket ${socket.id}`
+				);
+
+				// Join the user to a room based on their userId
+				socket.join(userId);
 			}
 		} catch (error) {
 			console.error("Error storing socketId:", error);
@@ -80,7 +86,7 @@ io.on("connection", (socket) => {
 	socket.on("volunteerLocationUpdate", async (data) => {
 		try {
 			const { sosId, volunteerId, coordinates } = data;
-			
+
 			// Verify the SOS exists and the volunteer is accepted
 			const sos = await SOS.findById(sosId);
 			if (!sos || !sos.acceptedBy.includes(volunteerId)) {
@@ -99,174 +105,48 @@ io.on("connection", (socket) => {
 					sosId,
 					volunteerId,
 					volunteerName: volunteer.name,
-					coordinates
+					coordinates,
 				});
 			}
 		} catch (error) {
 			console.error("Error handling volunteer location update:", error);
 		}
 	});
-	
-	// Handle chat message sending
-	socket.on("sendMessage", async (data) => {
-		try {
-			const { chatId, message, senderId } = data;
-			
-			// Better logging for debugging
-			console.log(`Message received for chat ${chatId} from sender ${senderId}`);
-			
-			if (!chatId || !senderId) {
-				console.log("Missing required chat data:", { chatId, senderId });
-				return;
-			}
-			
-			const chat = await Chat.findById(chatId);
-			if (!chat) {
-				console.log(`Chat ${chatId} not found`);
-				return;
-			}
-			
-			// Convert ObjectIds to strings for comparison
-			const participantIds = chat.participants.map(p => p.toString());
-			const senderIdStr = senderId.toString();
-			
-			// Check if the sender is a participant in the chat
-			if (!participantIds.includes(senderIdStr)) {
-				console.log(`User ${senderId} not authorized to send messages to chat ${chatId}`);
-				return;
-			}
-			
-			// Log participants for debugging
-			console.log(`Chat ${chatId} participants: ${participantIds}, sender: ${senderIdStr}`);
-			
-			// Notify all other participants in the chat
-			for (const participantId of chat.participants) {
-				const participantIdStr = participantId.toString();
-				
-				// Don't send notification to the sender
-				if (participantIdStr !== senderIdStr) {
-					const participant = await User.findById(participantId);
-					
-					if (participant && participant.socketId) {
-						console.log(`Sending message to ${participant.name} (${participantIdStr}) with socket ${participant.socketId}`);
-						
-						io.to(participant.socketId).emit("receiveMessage", {
-							chatId,
-							message
-						});
-					} else {
-						console.log(`Participant ${participantIdStr} not online or missing socketId`);
-					}
-				}
-			}
-		} catch (error) {
-			console.error("Error handling message sending:", error);
-		}
-	});
 
-	// Handle typing status in chat
-	socket.on("typing", async (data) => {
-		try {
-			const { chatId, userId, isTyping } = data;
-			
-			// Validate all required data is present
-			if (!chatId || !userId) {
-				console.log("Missing required data for typing event:", data);
-				return;
-			}
-			
-			const chat = await Chat.findById(chatId);
-			if (!chat) return;
-			
-			// Notify all other participants about typing status
-			for (const participantId of chat.participants) {
-				// Add null check and toString() safety
-				if (participantId && userId && participantId.toString() !== userId.toString()) {
-					const participant = await User.findById(participantId);
-					
-					if (participant && participant.socketId) {
-						io.to(participant.socketId).emit("userTyping", {
-							chatId,
-							userId,
-							isTyping
-						});
-					}
-				}
-			}
-		} catch (error) {
-			console.error("Error handling typing status:", error);
-		}
-	});
-	
-	// Handle read receipts for messages
-	socket.on("messageRead", async (data) => {
-		try {
-			const { chatId, messageId, userId } = data;
-			
-			const chat = await Chat.findById(chatId);
-			if (!chat) return;
-			
-			const message = chat.messages.id(messageId);
-			if (!message) return;
-			
-			// Add user to the readBy array if not already there
-			if (!message.readBy.some(read => read.user.toString() === userId)) {
-				message.readBy.push({ user: userId, readAt: new Date() });
-				await chat.save();
-				
-				// Get message sender
-				const sender = await User.findById(message.sender);
-				
-				if (sender && sender.socketId) {
-					// Notify sender that their message was read
-					io.to(sender.socketId).emit("messageReadReceipt", {
-						chatId,
-						messageId,
-						readBy: userId,
-						readAt: new Date()
-					});
-				}
-			}
-		} catch (error) {
-			console.error("Error handling message read status:", error);
-		}
-	});
-	
-	// Handle read receipts for SOS alerts
 	socket.on("SOSRead", async (data) => {
 		try {
 			const { sosId, volunteerId } = data;
-			
+
 			// Mark SOS notification as read
 			await Notification.findOneAndUpdate(
 				{
 					recipient: volunteerId,
 					relatedId: sosId,
-					type: 'SOS'
+					type: "SOS",
 				},
 				{
 					isRead: true,
-					readAt: new Date()
+					readAt: new Date(),
 				}
 			);
-			
+
 			// Get SOS details
 			const sos = await SOS.findById(sosId);
 			if (!sos) return;
-			
+
 			// Find user who created the SOS
 			const sosCreator = await User.findById(sos.user);
 			const volunteer = await User.findById(volunteerId);
-			
+
 			if (sosCreator && sosCreator.socketId && volunteer) {
 				// Notify SOS creator that a volunteer has seen the alert
 				io.to(sosCreator.socketId).emit("sosReadReceipt", {
 					sosId,
 					volunteer: {
 						id: volunteerId,
-						name: volunteer.name
+						name: volunteer.name,
 					},
-					readAt: new Date()
+					readAt: new Date(),
 				});
 			}
 		} catch (error) {
@@ -274,9 +154,37 @@ io.on("connection", (socket) => {
 		}
 	});
 
+	// Handle sending messages
+	socket.on("sendMessage", async ({ senderId, receiverId, message }) => {
+		try {
+			let chat = await Chat.findOne({
+				$or: [
+					{ user1: senderId, user2: receiverId },
+					{ user1: receiverId, user2: senderId },
+				],
+			});
+
+			if (!chat) {
+				chat = new Chat({
+					user1: senderId,
+					user2: receiverId,
+					messages: [],
+				});
+			}
+
+			chat.messages.push({ message, sender: senderId });
+			await chat.save();
+
+			// Emit the new message to the receiver's room
+			io.to(receiverId).emit("newMessage", { message, sender: senderId });
+		} catch (error) {
+			console.error("Error sending message:", error);
+		}
+	});
+
 	socket.on("disconnect", async () => {
 		console.log("A user disconnected:", socket.id);
-		
+
 		// Clear socketId from User document on disconnect
 		try {
 			await User.findOneAndUpdate(
@@ -287,6 +195,159 @@ io.on("connection", (socket) => {
 			console.error("Error clearing socketId:", error);
 		}
 	});
+});
+
+// Chat routes
+app.get("/api/chats/:receiverId", authMiddleware, async (req, res) => {
+	try {
+		const { userId } = req.user;
+		const { receiverId } = req.params;
+		console.log(
+			"Fetching chat for user:",
+			userId,
+			"with receiver:",
+			receiverId
+		);
+
+		const chat = await Chat.findOne({
+			$or: [
+				{ user1: userId, user2: receiverId },
+				{ user1: receiverId, user2: userId },
+			],
+		}).populate("messages.sender", "name");
+
+		if (!chat) return res.status(200).json({ messages: [] });
+
+		res.status(200).json(chat.messages);
+	} catch (error) {
+		console.error("Error fetching chat:", error);
+		res.status(500).json({ message: "Server error" });
+	}
+});
+
+app.post("/api/chats/:receiverId", authMiddleware, async (req, res) => {
+	try {
+		const { userId } = req.user;
+		const { receiverId } = req.params;
+		const { message } = req.body;
+
+		let chat = await Chat.findOne({
+			$or: [
+				{ user1: userId, user2: receiverId },
+				{ user1: receiverId, user2: userId },
+			],
+		});
+
+		if (!chat) {
+			chat = new Chat({ user1: userId, user2: receiverId, messages: [] });
+		}
+
+		chat.messages.push({ message, sender: userId });
+		await chat.save();
+
+		// Emit the new message via socket.io
+		const io = req.app.get("io");
+		if (io) {
+			io.to(receiverId).emit("newMessage", { message, sender: userId });
+		} else {
+			console.error("Socket.io instance not found");
+		}
+
+		res.status(201).json({ success: true });
+	} catch (error) {
+		console.error("Error sending message:", error);
+		res.status(500).json({ message: "Server error" });
+	}
+});
+
+// Fetch all chats for the logged-in user
+app.get("/api/chats", authMiddleware, async (req, res) => {
+	try {
+		const { userId } = req.user;
+
+		// Find all chats where the user is a participant
+		const chats = await Chat.find({
+			$or: [{ user1: userId }, { user2: userId }],
+		})
+			.populate("user1", "name avatar")
+			.populate("user2", "name avatar")
+			.sort({ updatedAt: -1 });
+
+		// Format the response to include the other user's details and last message
+		const formattedChats = chats.map((chat) => {
+			const otherUser =
+				chat.user1._id.toString() === userId ? chat.user2 : chat.user1;
+
+			return {
+				_id: chat._id,
+				otherUser: {
+					_id: otherUser._id,
+					name: otherUser.name,
+					avatar: otherUser.avatar || "",
+				},
+				lastMessage:
+					chat.messages.length > 0
+						? chat.messages[chat.messages.length - 1].message
+						: "No messages yet",
+				updatedAt: chat.updatedAt,
+			};
+		});
+
+		res.status(200).json(formattedChats);
+	} catch (error) {
+		console.error("Error fetching chats:", error);
+		res.status(500).json({ message: "Server error" });
+	}
+});
+
+// Search users by name or email
+app.post("/api/user/search", async (req, res) => {
+	try {
+		const { query } = req.body;
+		console.log("Search query:", query);
+		if (!query) {
+			return res
+				.status(400)
+				.json({ message: "Query parameter is required" });
+		}
+
+		const users = await User.find({
+			$or: [
+				{ name: { $regex: query, $options: "i" } },
+				{ email: { $regex: query, $options: "i" } },
+			],
+		}).select("name email");
+
+		res.status(200).json(users);
+	} catch (error) {
+		console.error("Error searching users:", error);
+		res.status(500).json({ message: "Server error" });
+	}
+});
+
+// Get user by ID
+app.get("/api/user/:id", async (req, res) => {
+	try {
+		const { id } = req.params;
+
+		// Validate if the id is a valid ObjectId
+		if (!mongoose.Types.ObjectId.isValid(id)) {
+			return res.status(400).json({ message: "Invalid user ID" });
+		}
+
+		const user = await User.findById(id).select(
+			"-password -otp -otpExpires"
+		);
+
+		if (!user) {
+			return res.status(404).json({ message: "User not found" });
+		}
+
+		res.status(200).json(user);
+	} catch (error) {
+		console.error("Error fetching user by ID:", error);
+		res.status(500).json({ message: "Server error" });
+	}
 });
 
 // Schedule automated reminders for pending responses

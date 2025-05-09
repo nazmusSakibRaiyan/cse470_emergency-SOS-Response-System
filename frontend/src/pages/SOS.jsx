@@ -55,24 +55,24 @@ export default function SOS() {
 
 		const handleSOSReadReceipt = (data) => {
 			const { sosId, volunteer, readAt } = data;
-			
-			setSosReadReceipts(prev => ({
+
+			setSosReadReceipts((prev) => ({
 				...prev,
 				[sosId]: [
 					...(prev[sosId] || []),
 					{
 						volunteerId: volunteer.id,
 						volunteerName: volunteer.name,
-						readAt
-					}
-				]
+						readAt,
+					},
+				],
 			}));
 		};
 
-		socket.on('sosReadReceipt', handleSOSReadReceipt);
+		socket.on("sosReadReceipt", handleSOSReadReceipt);
 
 		return () => {
-			socket.off('sosReadReceipt', handleSOSReadReceipt);
+			socket.off("sosReadReceipt", handleSOSReadReceipt);
 		};
 	}, [socket]);
 
@@ -89,7 +89,7 @@ export default function SOS() {
 			});
 			const data = await res.json();
 			setMySOS(data);
-			
+
 			// Fetch read receipts for each SOS
 			for (const sos of data) {
 				if (!sos.isResolved) {
@@ -102,26 +102,26 @@ export default function SOS() {
 			setLoading(false);
 		}
 	};
-	
+
 	const fetchSOSDetails = async (sosId) => {
 		try {
 			const response = await axios.get(
 				`http://localhost:5000/api/sos/${sosId}`,
 				{
 					headers: {
-						Authorization: `Bearer ${token}`
-					}
+						Authorization: `Bearer ${token}`,
+					},
 				}
 			);
-			
+
 			if (response.data.readReceipts) {
-				setSosReadReceipts(prev => ({
+				setSosReadReceipts((prev) => ({
 					...prev,
-					[sosId]: response.data.readReceipts
+					[sosId]: response.data.readReceipts,
 				}));
 			}
 		} catch (error) {
-			console.error('Error fetching SOS details:', error);
+			console.error("Error fetching SOS details:", error);
 		}
 	};
 
@@ -211,9 +211,12 @@ export default function SOS() {
 
 	// Helper function to check if a volunteer has responded to an SOS
 	const hasResponders = (sosId) => {
-		return respondingVolunteers[sosId] && Object.keys(respondingVolunteers[sosId]).length > 0;
+		return (
+			respondingVolunteers[sosId] &&
+			Object.keys(respondingVolunteers[sosId]).length > 0
+		);
 	};
-	
+
 	// Helper to format date
 	const formatDate = (date) => {
 		return new Date(date).toLocaleString();
@@ -222,7 +225,7 @@ export default function SOS() {
 	return (
 		<div className="p-4 sm:p-6 bg-gray-100 min-h-screen">
 			<h1 className="text-2xl sm:text-3xl font-bold mb-4 text-red-600">
-				 🚨 SOS Page
+				🚨 SOS Page
 			</h1>
 
 			<div className="mb-6">
@@ -244,7 +247,7 @@ export default function SOS() {
 
 			<div className="mb-6 bg-white p-4 sm:p-6 rounded shadow border-l-4 border-red-500">
 				<h2 className="text-xl font-semibold mb-4 text-red-600">
-					 🆘 Send SOS
+					🆘 Send SOS
 				</h2>
 				<textarea
 					className="w-full p-2 border rounded mb-4 focus:outline-none focus:ring-2 focus:ring-red-500"
@@ -272,7 +275,7 @@ export default function SOS() {
 
 			<div className="bg-white p-4 sm:p-6 rounded shadow border-l-4 border-green-500 mb-6">
 				<h2 className="text-xl font-semibold mb-4 text-green-600">
-					 📜 My SOS
+					📜 My SOS
 				</h2>
 				{loading ? (
 					<p className="text-gray-700">Loading...</p>
@@ -318,112 +321,101 @@ export default function SOS() {
 										Mark as Resolved
 									</button>
 								)}
-								
+
 								{/* Show read receipts */}
-								{sosReadReceipts[sos._id] && sosReadReceipts[sos._id].length > 0 && (
-									<div className="mt-3">
-										<h4 className="font-semibold text-blue-600">Seen by volunteers:</h4>
-										<div className="bg-blue-50 p-3 rounded-lg mt-2 mb-3">
-											{sosReadReceipts[sos._id].map((receipt, index) => (
-												<div key={`${receipt.volunteerId}-${index}`} className="mb-2 text-sm">
-													<p className="text-gray-800">
-														<span className="font-medium">{receipt.volunteerName}</span> 
-														<span className="text-gray-500 ml-2">
-															{formatDate(receipt.readAt)}
-														</span>
-													</p>
-												</div>
-											))}
+								{sosReadReceipts[sos._id] &&
+									sosReadReceipts[sos._id].length > 0 && (
+										<div className="mt-3">
+											<h4 className="font-semibold text-blue-600">
+												Seen by volunteers:
+											</h4>
+											<div className="bg-blue-50 p-3 rounded-lg mt-2 mb-3">
+												{sosReadReceipts[sos._id].map(
+													(receipt, index) => (
+														<div
+															key={`${receipt.volunteerId}-${index}`}
+															className="mb-2 text-sm"
+														>
+															<p className="text-gray-800">
+																<span className="font-medium">
+																	{
+																		receipt.volunteerName
+																	}
+																</span>
+																<span className="text-gray-500 ml-2">
+																	{formatDate(
+																		receipt.readAt
+																	)}
+																</span>
+															</p>
+														</div>
+													)
+												)}
+											</div>
 										</div>
-									</div>
-								)}
-								
+									)}
+
 								{/* Show responding volunteers if there are any */}
 								{!sos.isResolved && hasResponders(sos._id) && (
 									<div className="mt-3">
-										<h4 className="font-semibold text-blue-600">Responding Volunteers:</h4>
+										<h4 className="font-semibold text-blue-600">
+											Responding Volunteers:
+										</h4>
 										<div className="bg-gray-50 p-3 rounded-lg mt-2 max-h-60 overflow-y-auto">
-											{Object.entries(respondingVolunteers[sos._id]).map(([volunteerId, volunteer]) => (
-												<div key={volunteerId} className="mb-2 border-b border-gray-200 pb-2">
-													<p className="font-medium">{volunteer.name}</p>
-													<p className="text-sm text-gray-600">
-														Location: ({volunteer.coordinates.latitude.toFixed(6)}, 
-														{volunteer.coordinates.longitude.toFixed(6)})
-													</p>
-													<p className="text-xs text-gray-500">
-														Last updated: {new Date(volunteer.lastUpdated).toLocaleTimeString()}
-													</p>
-													<a 
-														href={`https://www.google.com/maps?q=${volunteer.coordinates.latitude},${volunteer.coordinates.longitude}`} 
-														target="_blank"
-														rel="noopener noreferrer"
-														className="text-blue-500 text-sm underline"
+											{Object.entries(
+												respondingVolunteers[sos._id]
+											).map(
+												([volunteerId, volunteer]) => (
+													<div
+														key={volunteerId}
+														className="mb-2 border-b border-gray-200 pb-2"
 													>
-														View volunteer on map
-													</a>
-												</div>
-											))}
+														<p className="font-medium">
+															{volunteer.name}
+														</p>
+														<p className="text-sm text-gray-600">
+															Location: (
+															{volunteer.coordinates.latitude.toFixed(
+																6
+															)}
+															,
+															{volunteer.coordinates.longitude.toFixed(
+																6
+															)}
+															)
+														</p>
+														<p className="text-xs text-gray-500">
+															Last updated:{" "}
+															{new Date(
+																volunteer.lastUpdated
+															).toLocaleTimeString()}
+														</p>
+														<a
+															href={`https://www.google.com/maps?q=${volunteer.coordinates.latitude},${volunteer.coordinates.longitude}`}
+															target="_blank"
+															rel="noopener noreferrer"
+															className="text-blue-500 text-sm underline"
+														>
+															View volunteer on
+															map
+														</a>
+													</div>
+												)
+											)}
 										</div>
 									</div>
 								)}
-								
-								{/* Button to start a chat with volunteers who accepted this SOS */}
-								{!sos.isResolved && sos.acceptedBy && sos.acceptedBy.length > 0 && (
+
+								{/* Button to view details of the SOS */}
+								{!sos.isResolved && (
 									<div className="mt-3">
-										<button 
-											className="bg-blue-600 text-white py-1 px-3 rounded hover:bg-blue-700"
-											onClick={() => {
-												// Show loading toast
-												const loadingToast = toast.loading('Creating chat room...');
-												
-												// Log the structure of acceptedBy to debug
-												console.log('AcceptedBy structure:', sos.acceptedBy);
-												
-												// Extract user IDs properly with better error checking
-												const userIds = sos.acceptedBy.map(volunteer => {
-													if (typeof volunteer === 'object' && volunteer !== null) {
-														return volunteer._id || volunteer.id;
-													}
-													return volunteer;
-												}).filter(id => id); // Remove any undefined values
-												
-												// Log the extracted userIds for debugging
-												console.log('Extracted userIds:', userIds);
-												
-												// Create chat with responders
-												fetch('http://localhost:5000/api/chat/create-sos-chat', {
-													method: 'POST',
-													headers: {
-														'Content-Type': 'application/json',
-														'Authorization': `Bearer ${token}`
-													},
-													body: JSON.stringify({
-														sosId: sos._id,
-														userIds: userIds
-													})
-												})
-												.then(response => {
-													if (!response.ok) {
-														return response.json().then(err => {
-															throw new Error(err.message || 'Server error');
-														});
-													}
-													return response.json();
-												})
-												.then(data => {
-													toast.dismiss(loadingToast);
-													toast.success('Chat room created successfully');
-													// Navigate to the chat page with the new chat's ID
-													navigate(`/chat/${data._id}`);
-												})
-												.catch(error => {
-													toast.dismiss(loadingToast);
-													console.error('Error creating chat room:', error);
-													toast.error(`Failed to create chat room: ${error.message || 'Unknown error'}`);
-												});
-											}}
+										<button
+											className="bg-gray-600 text-white py-1 px-3 rounded hover:bg-gray-700"
+											onClick={() =>
+												navigate(`/sos/${sos._id}`)
+											}
 										>
-											Chat with Responders
+											View Details
 										</button>
 									</div>
 								)}
@@ -432,7 +424,7 @@ export default function SOS() {
 					</ul>
 				)}
 			</div>
-			
+
 			{/* Multi-location Map View (for future enhancement) */}
 			{/* This would be a good place to add an embedded map showing both the user's location 
 			    and all responding volunteers' locations on a single map */}

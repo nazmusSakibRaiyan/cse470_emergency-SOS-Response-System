@@ -93,68 +93,6 @@ export const SocketProvider = ({ children }) => {
 				});
 			});
 
-			// Handle new chat message notifications
-			socket.on("newMessage", (data) => {
-				// Show toast notification for new messages
-				toast.custom(
-					(t) => (
-						<div
-							className={`${
-								t.visible ? 'animate-enter' : 'animate-leave'
-							} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex`}
-						>
-							<div className="flex-1 p-4">
-								<div className="flex items-start">
-									<div className="ml-3 flex-1">
-										<p className="text-sm font-medium text-gray-900">
-											New Message
-										</p>
-										<p className="mt-1 text-sm text-gray-500">
-											{data.notification.metadata.senderName}: {data.notification.metadata.messagePreview}
-										</p>
-									</div>
-								</div>
-							</div>
-							<div className="border-l border-gray-200">
-								<button
-									onClick={() => {
-										window.location.href = `/chat/${data.chatId}`;
-										toast.dismiss(t.id);
-									}}
-									className="w-full h-full p-4 flex items-center justify-center text-sm font-medium text-blue-600 hover:text-blue-500"
-								>
-									Open
-								</button>
-							</div>
-						</div>
-					),
-					{ duration: 5000 }
-				);
-
-				// Increment unread notifications count
-				setUnreadNotifications(prev => prev + 1);
-			});
-			
-			// Handle new chat creation notifications (added for SOS chat support)
-			socket.on("newChat", (data) => {
-				console.log("New chat created:", data);
-				toast.success(
-					<div>
-						<p>New emergency chat created</p>
-						<p className="text-sm">Click to open the conversation</p>
-					</div>,
-					{
-						onClick: () => {
-							window.location.href = `/chat/${data.chat._id}`;
-						},
-						duration: 5000
-					}
-				);
-				
-				// Increment unread notifications count
-				setUnreadNotifications(prev => prev + 1);
-			});
-
 			// Handle SOS alert notifications
 			socket.on("sosAlert", (data) => {
 				// Show toast notification for SOS alerts

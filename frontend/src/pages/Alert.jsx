@@ -10,7 +10,7 @@ import {
 	CheckCircle,
 	XCircle,
 	Phone,
-	} from "lucide-react";
+} from "lucide-react";
 
 const Alert = () => {
 	const { socket, updateVolunteerLocation } = useSocket();
@@ -19,6 +19,7 @@ const Alert = () => {
 	const [acceptedSOS, setAcceptedSOS] = useState(new Set());
 	const locationIntervalRefs = useRef({});
 	const navigate = useNavigate();
+	console.log(notifications);
 
 	useEffect(() => {
 		if (loading) return;
@@ -41,11 +42,13 @@ const Alert = () => {
 				if (res.ok) {
 					const data = await res.json();
 					setNotifications(data);
-					
+
 					// Check if the volunteer has already accepted any of these SOS alerts
-					data.forEach(sos => {
+					data.forEach((sos) => {
 						if (sos.acceptedBy.includes(user._id)) {
-							setAcceptedSOS(prev => new Set([...prev, sos._id]));
+							setAcceptedSOS(
+								(prev) => new Set([...prev, sos._id])
+							);
 							startLocationTracking(sos._id);
 						}
 					});
@@ -60,10 +63,10 @@ const Alert = () => {
 		if (token && user) {
 			fetchUnresolvedSOS();
 		}
-		
+
 		return () => {
 			// Clean up location tracking intervals when component unmounts
-			Object.values(locationIntervalRefs.current).forEach(interval => {
+			Object.values(locationIntervalRefs.current).forEach((interval) => {
 				clearInterval(interval);
 			});
 		};
@@ -74,29 +77,31 @@ const Alert = () => {
 			socket.on("newSOS", (data) => {
 				setNotifications((prev) => [data, ...prev]);
 			});
-			
+
 			// Listen for SOS resolution notifications
 			socket.on("sosResolved", (data) => {
 				toast.info(`SOS alert has been resolved by the user.`);
-				
+
 				// Stop location tracking for this SOS
 				if (locationIntervalRefs.current[data.sosId]) {
 					clearInterval(locationIntervalRefs.current[data.sosId]);
 					delete locationIntervalRefs.current[data.sosId];
 				}
-				
+
 				// Remove the resolved SOS from the notifications list
-				setNotifications(prev => prev.filter(sos => sos._id !== data.sosId));
-				
+				setNotifications((prev) =>
+					prev.filter((sos) => sos._id !== data.sosId)
+				);
+
 				// Remove from accepted SOS set
-				setAcceptedSOS(prev => {
+				setAcceptedSOS((prev) => {
 					const updated = new Set(prev);
 					updated.delete(data.sosId);
 					return updated;
 				});
 			});
 		}
-		
+
 		return () => {
 			if (socket) {
 				socket.off("newSOS");
@@ -111,7 +116,7 @@ const Alert = () => {
 		if (locationIntervalRefs.current[sosId]) {
 			clearInterval(locationIntervalRefs.current[sosId]);
 		}
-		
+
 		// Function to send current location
 		const sendLocation = () => {
 			if (navigator.geolocation) {
@@ -119,7 +124,7 @@ const Alert = () => {
 					(position) => {
 						const coordinates = {
 							latitude: position.coords.latitude,
-							longitude: position.coords.longitude
+							longitude: position.coords.longitude,
 						};
 						updateVolunteerLocation(sosId, coordinates);
 					},
@@ -129,10 +134,10 @@ const Alert = () => {
 				);
 			}
 		};
-		
+
 		// Send location immediately
 		sendLocation();
-		
+
 		// Then send every 30 seconds
 		const intervalId = setInterval(sendLocation, 30000);
 		locationIntervalRefs.current[sosId] = intervalId;
@@ -150,7 +155,7 @@ const Alert = () => {
 			});
 			if (res.ok) {
 				toast.success("SOS accepted successfully!");
-				
+
 				// Update UI to show this SOS as accepted
 				setNotifications((prev) =>
 					prev.map((sos) =>
@@ -162,10 +167,10 @@ const Alert = () => {
 							: sos
 					)
 				);
-				
+
 				// Add to set of accepted SOS
-				setAcceptedSOS(prev => new Set([...prev, sosId]));
-				
+				setAcceptedSOS((prev) => new Set([...prev, sosId]));
+
 				// Start sending location updates
 				startLocationTracking(sosId);
 			} else {
@@ -191,20 +196,20 @@ const Alert = () => {
 			);
 			if (res.ok) {
 				toast.success("SOS marked as resolved!");
-				
+
 				// Stop location tracking for this SOS
 				if (locationIntervalRefs.current[sosId]) {
 					clearInterval(locationIntervalRefs.current[sosId]);
 					delete locationIntervalRefs.current[sosId];
 				}
-				
+
 				// Remove from accepted SOS set
-				setAcceptedSOS(prev => {
+				setAcceptedSOS((prev) => {
 					const updated = new Set(prev);
 					updated.delete(sosId);
 					return updated;
 				});
-				
+
 				// Remove from notifications
 				setNotifications((prev) =>
 					prev.filter((sos) => sos._id !== sosId)
@@ -307,7 +312,9 @@ const Alert = () => {
 											className="mr-2"
 											size={18}
 										/>
-										<span>Accepted (Sending location updates)</span>
+										<span>
+											Accepted (Sending location updates)
+										</span>
 									</div>
 								) : (
 									<button
@@ -319,6 +326,14 @@ const Alert = () => {
 										Accept SOS
 									</button>
 								)}
+								<button
+									onClick={() =>
+										navigate(`/sos/${notification._id}`)
+									}
+									className="bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700 transition"
+								>
+									View Details
+								</button>
 							</div>
 						</div>
 					))
