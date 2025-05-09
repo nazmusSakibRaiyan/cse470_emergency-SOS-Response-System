@@ -13,18 +13,11 @@ export default function Broadcast() {
     fetchBroadcasts();
   }, []);
 
-  // const fetchBroadcasts = async () => {
-  //   try {
-  //     const res = await fetch("http://localhost:5000/api/broadcasts");
-  //     const data = await res.json();
-  //     setBroadcasts(data);
-  //   } catch (error) {
-  //     toast.error("Failed to fetch broadcasts.");
-  //   }
-  // };
   const fetchBroadcasts = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/broadcast"); // FIXED
+      const res = await fetch("http://localhost:5000/api/broadcast", {
+        headers: { Authorization: `Bearer ${token}` }, // Added Authorization header
+      });
       const data = await res.json();
       setBroadcasts(data);
     } catch (error) {
@@ -39,7 +32,10 @@ export default function Broadcast() {
     try {
       const res = await fetch("http://localhost:5000/api/broadcast", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Added Authorization header
+        },
         body: JSON.stringify({ title, message }),
       });
 

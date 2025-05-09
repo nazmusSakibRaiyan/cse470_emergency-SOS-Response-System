@@ -9,10 +9,16 @@ const ContactSchema = new mongoose.Schema(
 			required: true,
 		},
 		contacts: [
-			{
-				type: mongoose.Schema.Types.ObjectId,
-				ref: "User",
-			},
+            {
+                user_name: {
+                    type: String,
+                    required: true,
+                },
+                user_email: {
+                    type: String,
+                    required: true,
+                },
+            }
 		],
 	},
 	{ timestamps: true }

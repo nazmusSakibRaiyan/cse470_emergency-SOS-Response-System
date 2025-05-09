@@ -54,9 +54,25 @@ export default function UserManagement() {
       });
 
       if (res.ok) {
+        const responseData = await res.json();
         toast.success("User blacklisted successfully.");
-        fetchUsers();
-        fetchBlacklistedUsers();
+        
+        // Find the blacklisted user in the current users array
+        const blacklistedUser = users.find(user => user._id === id);
+        
+        if (blacklistedUser) {
+          // Update local state immediately
+          // Remove user from active users list
+          setUsers(users.filter(user => user._id !== id));
+          
+          // Add user to blacklisted users with the blacklisted flag set
+          const updatedUser = { ...blacklistedUser, blacklisted: true };
+          setBlacklistedUsers([...blacklistedUsers, updatedUser]);
+        } else {
+          // If for some reason we can't find the user, refresh both lists
+          fetchUsers();
+          fetchBlacklistedUsers();
+        }
       } else {
         const errorData = await res.json();
         toast.error(errorData.message || "Failed to blacklist user.");
@@ -78,8 +94,23 @@ export default function UserManagement() {
 
       if (res.ok) {
         toast.success("User removed from blacklist successfully.");
-        fetchUsers();
-        fetchBlacklistedUsers();
+        
+        // Find the user in the blacklisted users array
+        const unblacklistedUser = blacklistedUsers.find(user => user._id === id);
+        
+        if (unblacklistedUser) {
+          // Update local state immediately
+          // Remove user from blacklisted users list
+          setBlacklistedUsers(blacklistedUsers.filter(user => user._id !== id));
+          
+          // Add user to active users with the blacklisted flag removed
+          const updatedUser = { ...unblacklistedUser, blacklisted: false };
+          setUsers([...users, updatedUser]);
+        } else {
+          // If for some reason we can't find the user, refresh both lists
+          fetchUsers();
+          fetchBlacklistedUsers();
+        }
       } else {
         const errorData = await res.json();
         toast.error(errorData.message || "Failed to remove user from blacklist.");

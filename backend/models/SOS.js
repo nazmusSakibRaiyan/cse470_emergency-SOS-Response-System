@@ -15,6 +15,7 @@ const SOSSchema = new mongoose.Schema(
 		},
 		isResolved: { type: Boolean, default: false },
 		acceptedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: User }],
+		isContact: { type: Boolean, default: false },
 	},
 	{ timestamps: true }
 );

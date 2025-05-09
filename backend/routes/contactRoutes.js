@@ -3,12 +3,15 @@ import {
 	addNewContact,
 	deleteContact,
 	getAllContacts,
+	getContactCount
 } from "../controllers/contactController.js";
+import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 router.post("/addContact", addNewContact);
 router.post("/getAllContacts", getAllContacts);
 router.delete("/deleteContact", deleteContact);
+router.get("/count", authMiddleware, getContactCount); // New endpoint for dashboard statistics
 
 export default router;

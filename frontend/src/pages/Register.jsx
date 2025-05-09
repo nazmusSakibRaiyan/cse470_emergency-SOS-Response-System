@@ -59,7 +59,9 @@ const Register = () => {
         toast.success("Registration successful!");
         navigate("/login");
       } else {
-        toast.error("Registration failed. Try again.");
+        const errorData = await res.json(); // Read the error response from the server
+        toast.error(errorData.message || "Registration failed. Try again."); // Display the server's error message
+        console.error("Registration error:", errorData); // Log for more details
       }
     } catch (error) {
       console.error(error);
@@ -117,6 +119,7 @@ const Register = () => {
             >
               <option value="user">User</option>
               <option value="volunteer">Volunteer</option>
+              <option value="admin">Admin</option> {/* Added Admin option */}
             </select>
           </div>
 

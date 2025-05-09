@@ -15,8 +15,16 @@ import Alert from "./pages/Alert";
 import SOSModal from "./components/SOSModal";
 import Broadcast from "./pages/Broadcast";
 import UserManagement from "./pages/UserManagement";
+import UserApprovals from "./pages/UserApprovals";
 import BlacklistUsers from "./pages/BlacklistUsers";
 import Status from "./pages/Status";
+import SafetyReports from "./pages/SafetyReports";
+import Profile from "./pages/Profile";
+import ActiveSOS from "./pages/ActiveSOS";
+import Chat from "./pages/Chat";
+import ChatList from "./pages/ChatList";
+import VolunteerFeedback from "./pages/VolunteerFeedback";
+import VolunteerVerification from "./pages/VolunteerVerification";
 
 const App = () => (
 	<Router>
@@ -31,20 +39,28 @@ const App = () => (
 						<Route path="/register" element={<Register />} />
 						<Route path="/login" element={<Login />} />
 						<Route path="/status" element={<Status />} />
+						
+						{/* Protected routes for all authenticated users */}
 						<Route element={<ProtectedRoute />}>
 							<Route path="/dashboard" element={<Dashboard />} />
+							<Route path="/profile" element={<Profile />} />
 							<Route path="/contact" element={<Contact />} />
 							<Route path="/sos" element={<SOS />} />
 							<Route path="/alert" element={<Alert />} />
+							<Route path="/chat/:chatId" element={<Chat />} />
+							<Route path="/chat-list" element={<ChatList />} />
+							<Route path="/volunteer-feedback" element={<VolunteerFeedback />} />
+						</Route>
+						
+						{/* Protected routes for admin only */}
+						<Route element={<ProtectedRoute adminOnly={true} />}>
 							<Route path="/broadcast" element={<Broadcast />} />
-							<Route
-								path="/user-management"
-								element={<UserManagement />}
-							/>
-							<Route
-								path="/blacklisted-users"
-								element={<BlacklistUsers />}
-							/>
+							<Route path="/user-management" element={<UserManagement />} />
+							<Route path="/user-approvals" element={<UserApprovals />} />
+							<Route path="/volunteer-verification" element={<VolunteerVerification />} />
+							<Route path="/blacklisted-users" element={<BlacklistUsers />} />
+							<Route path="/active-sos" element={<ActiveSOS />} />
+							<Route path="/safety-reports" element={<SafetyReports />} />
 						</Route>
 					</Routes>
 				</SocketProvider>

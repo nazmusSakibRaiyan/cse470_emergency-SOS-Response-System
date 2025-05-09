@@ -1,28 +1,53 @@
 import { useSOSModal } from "../context/SOSModalContext";
 import { useAuth } from "../context/AuthContext";
+import { toast } from "react-hot-toast";
+import { useEffect } from "react";
 
 const SOSModal = () => {
 	const { sosData, hideSOSModal } = useSOSModal();
-	const { user } = useAuth();
+	const { user, token } = useAuth();
 
-	if (!sosData || sosData.user._id === user._id) return null;
+	// Add logging to track when modal should display
+	useEffect(() => {
+		if (sosData) {
+			console.log("SOS Modal should be displayed with data:", sosData);
+			// Play alert sound when modal appears
+			const audio = new Audio('/emergency-alarm.mp3');
+			audio.play().catch(err => {
+				console.log("Audio playback error:", err);
+			});
+		}
+	}, [sosData]);
+
+	if (!sosData || !user || sosData.user?._id === user._id) return null;
 
 	const handleAccept = async () => {
 		try {
-			await fetch("http://localhost:5000/api/sos/acceptSOS", {
+			const response = await fetch("http://localhost:5000/api/sos/acceptSOS", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: `Bearer ${user.token}`,
+					Authorization: `Bearer ${token}`,
 				},
 				body: JSON.stringify({
 					sosId: sosData._id,
 					userId: user._id,
 				}),
 			});
-			hideSOSModal();
+			
+			if (response.ok) {
+				toast.success("SOS accepted successfully!");
+				hideSOSModal();
+
+				// Redirect to Alert page to see more details
+				window.location.href = "/alert";
+			} else {
+				const errorData = await response.json();
+				toast.error(`Failed to accept SOS: ${errorData.message || "Unknown error"}`);
+			}
 		} catch (error) {
 			console.error("Failed to accept SOS:", error);
+			toast.error("Failed to accept SOS. Network error.");
 		}
 	};
 
@@ -48,7 +73,7 @@ const SOSModal = () => {
 								Requester:
 							</strong>{" "}
 							<span className="text-gray-600">
-								{sosData.user.name}
+								{sosData.user?.name || "Unknown user"}
 							</span>
 						</p>
 						<p className="text-gray-800">
@@ -60,12 +85,16 @@ const SOSModal = () => {
 						<p className="text-gray-800">
 							<strong className="font-semibold">Location:</strong>{" "}
 							<span className="text-gray-600">
-								{sosData.location.latitude},{" "}
-								{sosData.location.longitude}
+								{sosData.location?.latitude || sosData.coordinates?.latitude},{" "}
+								{sosData.location?.longitude || sosData.coordinates?.longitude}
 							</span>
 						</p>
 						<a
-							href={`https://www.google.com/maps?q=${sosData.location.latitude},${sosData.location.longitude}`}
+							href={`https://www.google.com/maps?q=${
+								sosData.location?.latitude || sosData.coordinates?.latitude
+							},${
+								sosData.location?.longitude || sosData.coordinates?.longitude
+							}`}
 							target="_blank"
 							rel="noopener noreferrer"
 							className="block text-center bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition"

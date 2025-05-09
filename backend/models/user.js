@@ -6,7 +6,7 @@ const UserSchema = new mongoose.Schema(
 		email: { type: String, required: true, unique: true },
 		password: { type: String, required: true },
 		phone: { type: String, required: true },
-		role: { type: String, enum: ["volunteer", "user"], required: true },
+		role: { type: String, enum: ["volunteer", "user", "admin"], required: true },
 		address: { type: String, required: true },
 		nid: { type: String, required: true },
 		otp: { type: String },
@@ -14,11 +14,14 @@ const UserSchema = new mongoose.Schema(
 		blacklisted: { type: Boolean, default: false },
 		isVerified: { type: Boolean, default: false },
 		verifiedAt: { type: Date }, // New field to track verification timestamp
+		isApproved: { type: Boolean, default: false }, // New field for admin approval
 		volunteerStatus: {
 			type: String,
 			enum: ["active", "inactive"],
 			default: "active",
 		},
+		isAdmin: { type: Boolean, default: false },
+		socketId: { type: String, default: null }, // Added for real-time communication
 	},
 	{ timestamps: true }
 );
