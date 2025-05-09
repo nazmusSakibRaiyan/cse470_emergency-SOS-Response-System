@@ -1,17 +1,21 @@
 import express from "express";
 import {
 	sendSoftSOS,
-    sendSilentSOS,
+	sendSilentSOS,
 	setAsResolved,
 	getAllNonResolvedSOS,
 	getAllMySOS,
 	acceptSOS,
-    generateSafetyReport,
-    getSOSById,
-    monitorActiveSOSCases,
-    getSOSStatistics  // Added new controller
+	generateSafetyReport,
+	getSOSById,
+	monitorActiveSOSCases,
+	getSOSStatistics,
+	getSOSDetails,
 } from "../controllers/sosController.js";
-import { adminMiddleware, authMiddleware } from "../middleware/authMiddleware.js";
+import {
+	adminMiddleware,
+	authMiddleware,
+} from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -26,9 +30,20 @@ router.post("/acceptSOS", acceptSOS);
 
 // Update the route to support both GET and POST
 router.get("/report", authMiddleware, adminMiddleware, generateSafetyReport);
-router.post("/safety-report", authMiddleware, adminMiddleware, generateSafetyReport);
+router.post(
+	"/safety-report",
+	authMiddleware,
+	adminMiddleware,
+	generateSafetyReport
+);
 
-router.get("/monitor-active", authMiddleware, adminMiddleware, monitorActiveSOSCases);
+router.get(
+	"/monitor-active",
+	authMiddleware,
+	adminMiddleware,
+	monitorActiveSOSCases
+);
 router.get("/:sosId", authMiddleware, getSOSById);
+router.get("/:id", authMiddleware, getSOSDetails); // New route to fetch SOS details by ID
 
 export default router;
