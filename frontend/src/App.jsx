@@ -13,6 +13,10 @@ import Contact from "./pages/Contact";
 import SOS from "./pages/SOS";
 import Alert from "./pages/Alert";
 import SOSModal from "./components/SOSModal";
+import Broadcast from "./pages/Broadcast";
+import UserManagement from "./pages/UserManagement";
+import BlacklistUsers from "./pages/BlacklistUsers";
+import Status from "./pages/Status";
 
 const App = () => (
 	<Router>
@@ -26,11 +30,21 @@ const App = () => (
 						<Route path="/" element={<HomePage />} />
 						<Route path="/register" element={<Register />} />
 						<Route path="/login" element={<Login />} />
+						<Route path="/status" element={<Status />} />
 						<Route element={<ProtectedRoute />}>
 							<Route path="/dashboard" element={<Dashboard />} />
 							<Route path="/contact" element={<Contact />} />
 							<Route path="/sos" element={<SOS />} />
 							<Route path="/alert" element={<Alert />} />
+							<Route path="/broadcast" element={<Broadcast />} />
+							<Route
+								path="/user-management"
+								element={<UserManagement />}
+							/>
+							<Route
+								path="/blacklisted-users"
+								element={<BlacklistUsers />}
+							/>
 						</Route>
 					</Routes>
 				</SocketProvider>

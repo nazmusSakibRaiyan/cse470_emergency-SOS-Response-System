@@ -30,9 +30,22 @@ const Navbar = () => {
 						<Link to="/sos" className="mx-2">
 							SOS
 						</Link>
-						<Link to="/alert" className="mx-2">
-							Alerts
+						<Link to="/broadcast" className="mx-2">
+							Broadcast
 						</Link>
+						<Link to="/user-management" className="mx-2">
+							User Management
+						</Link>
+						{user.role === "volunteer" && (
+							<>
+								<Link to="/alert" className="mx-2">
+									Alerts
+								</Link>
+								<Link to="/status" className="mx-2">
+									Status
+								</Link>
+							</>
+						)}
 						<button
 							onClick={logout}
 							className="bg-red-500 px-3 py-1 rounded hover:bg-red-600"

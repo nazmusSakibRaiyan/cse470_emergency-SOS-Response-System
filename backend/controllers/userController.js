@@ -28,3 +28,28 @@ export const getAllUserExceptMe = async (req, res) => {
 		res.status(500).json({ message: "Server error", error });
 	}
 };
+
+export const updateVolunteerStatus = async (req, res) => {
+	try {
+		const { userId, status } = req.body;
+
+		if (!["active", "inactive"].includes(status)) {
+			return res.status(400).json({ message: "Invalid status value" });
+		}
+
+		const user = await User.findById(userId);
+		if (!user || user.role !== "volunteer") {
+			return res.status(404).json({ message: "Volunteer not found" });
+		}
+
+		user.volunteerStatus = status;
+		await user.save();
+
+		res.status(200).json({
+			message: "Volunteer status updated successfully",
+		});
+	} catch (error) {
+		console.error("Error updating volunteer status:", error);
+		res.status(500).json({ message: "Failed to update volunteer status" });
+	}
+};

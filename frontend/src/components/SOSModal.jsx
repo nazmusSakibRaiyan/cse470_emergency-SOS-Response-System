@@ -73,7 +73,13 @@ const SOSModal = () => {
 							View on Google Maps
 						</a>
 					</div>
-					<div className="mt-6 flex justify-end">
+					<div className="mt-6 flex justify-between items-center">
+						<button
+							onClick={hideSOSModal}
+							className="bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition"
+						>
+							Reject
+						</button>
 						<button
 							onClick={handleAccept}
 							className="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 transition"
