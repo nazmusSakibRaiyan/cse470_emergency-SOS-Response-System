@@ -23,12 +23,12 @@ router.post("/sendSoftSOS", sendSoftSOS);
 router.post("/sendSilentSOS", sendSilentSOS);
 router.post("/setAsResolved", setAsResolved);
 router.get("/", getAllNonResolvedSOS);
-router.get("/active", authMiddleware, getAllNonResolvedSOS); // Removed adminMiddleware to allow volunteers to see active SOS
-router.get("/stats", authMiddleware, getSOSStatistics); // New route for dashboard statistics
+router.get("/active", authMiddleware, getAllNonResolvedSOS); 
+router.get("/stats", authMiddleware, getSOSStatistics); 
 router.post("/mySOS", getAllMySOS);
 router.post("/acceptSOS", acceptSOS);
 
-// Update the route to support both GET and POST
+
 router.get("/report", authMiddleware, adminMiddleware, generateSafetyReport);
 router.post(
 	"/safety-report",
@@ -44,6 +44,6 @@ router.get(
 	monitorActiveSOSCases
 );
 router.get("/:sosId", authMiddleware, getSOSById);
-router.get("/:id", authMiddleware, getSOSDetails); // New route to fetch SOS details by ID
+router.get("/:id", authMiddleware, getSOSDetails); 
 
 export default router;

@@ -12,7 +12,7 @@ import {
 import Notification from "../models/Notification.js";
 import Chat from "../models/Chat.js";
 
-// Send Silent SOS - no sound but urgent
+
 export const sendSilentSOS = async (req, res) => {
 	try {
 		const { userId, message, coordinates } = req.body;
@@ -27,20 +27,18 @@ export const sendSilentSOS = async (req, res) => {
 		});
 		const newSOS = await sos.save();
 
-		// Find all active and verified volunteers
+
 		const activeVerifiedVolunteers = await User.find({
 			role: "volunteer",
 			volunteerStatus: "active",
 			isVerified: true,
 		});
 
-		// Create notifications and send alerts to volunteers using our notification system
 		const volunteerIds = activeVerifiedVolunteers.map(
 			(volunteer) => volunteer._id
 		);
 		await createSOSNotification(newSOS._id, userId, volunteerIds);
 
-		// Emit to all connected clients
 		io.emit("newSOS", {
 			message: message,
 			user: user,
@@ -74,20 +72,17 @@ export const sendSoftSOS = async (req, res) => {
 		const newSOS = await sos.save();
 
 		if (receiver === "volunteer") {
-			// Find active and verified volunteers
 			const activeVerifiedVolunteers = await User.find({
 				role: "volunteer",
 				volunteerStatus: "active",
 				isVerified: true,
 			});
 
-			// Create notifications for volunteers
 			const volunteerIds = activeVerifiedVolunteers.map(
 				(volunteer) => volunteer._id
 			);
 			await createSOSNotification(newSOS._id, userId, volunteerIds);
 
-			// Emit to all connected clients
 			io.emit("newSOS", {
 				message: message,
 				user: user,
@@ -102,10 +97,9 @@ export const sendSoftSOS = async (req, res) => {
 			if (!myContacts)
 				return res.status(404).json({ message: "No contacts found" });
 
-			// Send emergency alerts to contacts via email
 			for (const contact of myContacts.contacts) {
 				try {
-					// Send HTML-formatted email to emergency contacts
+
 					await sendSOSEmergencyAlert(
 						contact.user_email,
 						user.name,
@@ -114,7 +108,7 @@ export const sendSoftSOS = async (req, res) => {
 						new Date()
 					);
 
-					// Try to send SMS if phone number is available
+
 					if (contact.user_phone) {
 						const smsMessage = `SOS ALERT: ${user.name} needs urgent help! Location: https://maps.google.com/?q=${coordinates.latitude},${coordinates.longitude}`;
 						await sendSMS(contact.user_phone, smsMessage);
@@ -138,20 +132,18 @@ export const setAsResolved = async (req, res) => {
 		const sos = await SOS.findById(sosId);
 		if (!sos) return res.status(404).json({ message: "SOS not found" });
 
-		// Store acceptedBy array before resolving (for notifications)
+
 		const acceptedVolunteers = [...sos.acceptedBy];
 
 		sos.isResolved = true;
 		await sos.save();
 
-		// Create resolved notifications for volunteers who accepted this SOS
 		if (acceptedVolunteers.length > 0) {
-			// Find all volunteers with their socketIds
+
 			const volunteers = await User.find({
 				_id: { $in: acceptedVolunteers },
 			});
 
-			// Create resolution notification for each volunteer
 			for (const volunteer of volunteers) {
 				// Create notification record
 				const notification = new Notification({
@@ -165,7 +157,7 @@ export const setAsResolved = async (req, res) => {
 				});
 				await notification.save();
 
-				// Send real-time notification if volunteer is online
+
 				if (volunteer.socketId) {
 					io.to(volunteer.socketId).emit("sosResolved", {
 						sosId,
@@ -184,13 +176,13 @@ export const setAsResolved = async (req, res) => {
 	}
 };
 
-// Get a specific SOS by ID with read receipt information
+
 export const getSOSById = async (req, res) => {
 	try {
 		const { sosId } = req.params;
 		const userId = req.user.id;
 
-		// Find and populate the SOS
+
 		const sos = await SOS.findById(sosId)
 			.populate("user", "-password")
 			.populate("acceptedBy", "name email profilePicture");
@@ -199,13 +191,12 @@ export const getSOSById = async (req, res) => {
 			return res.status(404).json({ message: "SOS not found" });
 		}
 
-		// Find related notifications to get read status
 		const notifications = await Notification.find({
 			relatedId: sosId,
 			type: "SOS",
 		}).populate("recipient", "name");
 
-		// Format read receipts for frontend with null check
+
 		const readReceipts = notifications
 			.filter((n) => n.isRead && n.recipient)
 			.map((n) => ({
@@ -214,9 +205,8 @@ export const getSOSById = async (req, res) => {
 				readAt: n.readAt,
 			}));
 
-		// If this is a volunteer viewing the SOS, mark their notification as read
 		if (req.user.role === "volunteer") {
-			// Update notification read status
+
 			await Notification.findOneAndUpdate(
 				{
 					recipient: userId,
@@ -227,7 +217,6 @@ export const getSOSById = async (req, res) => {
 				{ isRead: true, readAt: new Date() }
 			);
 
-			// Emit read receipt event to the SOS creator
 			if (sos.user && sos.user.socketId) {
 				const volunteer = await User.findById(userId, "name");
 				if (volunteer) {
@@ -308,10 +297,10 @@ export const acceptSOS = async (req, res) => {
 		sos.acceptedBy.push(userId);
 		await sos.save();
 
-		// Get the SOS creator
+
 		const sosCreator = await User.findById(sos.user);
 		if (sosCreator) {
-			// Create notification record
+
 			const notification = new Notification({
 				recipient: sosCreator._id,
 				type: "SOS",
@@ -326,7 +315,7 @@ export const acceptSOS = async (req, res) => {
 			});
 			await notification.save();
 
-			// Send real-time notification
+
 			if (sosCreator.socketId) {
 				io.to(sosCreator.socketId).emit("sosAccepted", {
 					sosId,
@@ -338,62 +327,53 @@ export const acceptSOS = async (req, res) => {
 				});
 			}
 
-			// Create a chat room between the SOS creator and the volunteer
 			try {
 				console.log(
 					`Creating SOS chat between user ${sosCreator._id} and volunteer ${userId}`
 				);
 
-				// Check if a chat already exists between these users for this SOS
 				const existingChat = await Chat.findOne({
-					participants: { $all: [sosCreator._id, userId] },
-					relatedSOS: sosId,
+					$or: [
+						{ user1: sosCreator._id, user2: userId },
+						{ user1: userId, user2: sosCreator._id }
+					]
 				});
 
 				if (!existingChat) {
-					// Create a new chat for this SOS emergency
+					const chatMessage = `I've accepted your SOS request and am on my way to help. Please stay calm.`;
+					
 					const chat = new Chat({
-						participants: [sosCreator._id, userId],
-						relatedSOS: sosId,
+						user1: sosCreator._id,
+						user2: userId,
 						messages: [
 							{
-								sender: userId,
-								content: `I've accepted your SOS request and am on my way to help. Please stay calm.`,
-								timestamp: new Date(),
-								readBy: [{ user: userId }],
+								message: chatMessage,
+								createdAt: new Date(),
+								sender: userId
 							},
-						],
-						lastMessage: {
-							content: `I've accepted your SOS request and am on my way to help. Please stay calm.`,
-							sender: userId,
-							timestamp: new Date(),
-						},
+						]
 					});
 
 					await chat.save();
 					console.log(`SOS chat created with ID: ${chat._id}`);
 
-					// Notify the SOS creator about the new chat
 					if (sosCreator.socketId) {
 						io.to(sosCreator.socketId).emit("newChat", {
 							chat: {
 								_id: chat._id,
-								participants: [
-									{
-										_id: sosCreator._id,
-										name: sosCreator.name,
-									},
-									{ _id: userId, name: user.name },
-								],
-								relatedSOS: sosId,
-								lastMessage: chat.lastMessage,
+								user1: sosCreator._id,
+								user2: userId,
+								lastMessage: {
+									message: chatMessage,
+									sender: userId,
+									createdAt: new Date()
+								}
 							},
 						});
 					}
 				}
 			} catch (chatError) {
 				console.error("Error creating SOS chat:", chatError);
-				// Don't return error, as SOS was still accepted
 			}
 		}
 
@@ -406,10 +386,8 @@ export const acceptSOS = async (req, res) => {
 
 export const generateSafetyReport = async (req, res) => {
 	try {
-		// Get date range from request body (if provided)
 		const { startDate, endDate } = req.body;
 
-		// Build query based on date range
 		let query = {};
 		if (startDate || endDate) {
 			query.createdAt = {};
@@ -417,14 +395,12 @@ export const generateSafetyReport = async (req, res) => {
 				query.createdAt.$gte = new Date(startDate);
 			}
 			if (endDate) {
-				// Set the end date to the end of the day
 				const endOfDay = new Date(endDate);
 				endOfDay.setHours(23, 59, 59, 999);
 				query.createdAt.$lte = endOfDay;
 			}
 		}
 
-		// Fetch SOS cases with the date filter
 		const sosCases = await SOS.find(query).populate("user", "name email");
 
 		const report = sosCases.map((sos) => ({
@@ -449,7 +425,6 @@ export const generateSafetyReport = async (req, res) => {
 	}
 };
 
-// Monitor active SOS cases
 export const monitorActiveSOSCases = async (req, res) => {
 	try {
 		const activeSOSCases = await SOS.find({ isResolved: false }).populate(
@@ -463,20 +438,17 @@ export const monitorActiveSOSCases = async (req, res) => {
 	}
 };
 
-// Get SOS Statistics for Dashboard
 export const getSOSStatistics = async (req, res) => {
 	try {
-		// Count total resolved SOS cases
 		const resolvedCount = await SOS.countDocuments({ isResolved: true });
 
-		// Count active volunteers
 		const activeVolunteers = await User.countDocuments({
 			role: "volunteer",
 			volunteerStatus: "active",
 			isVerified: true,
 		});
 
-		// Count ongoing SOS cases
+
 		const ongoingCount = await SOS.countDocuments({
 			isResolved: false,
 			isContact: false,

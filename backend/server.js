@@ -260,12 +260,10 @@ app.post("/api/chats/:receiverId", authMiddleware, async (req, res) => {
 	}
 });
 
-// Fetch all chats for the logged-in user
 app.get("/api/chats", authMiddleware, async (req, res) => {
 	try {
 		const { userId } = req.user;
 
-		// Find all chats where the user is a participant
 		const chats = await Chat.find({
 			$or: [{ user1: userId }, { user2: userId }],
 		})
@@ -273,7 +271,6 @@ app.get("/api/chats", authMiddleware, async (req, res) => {
 			.populate("user2", "name avatar")
 			.sort({ updatedAt: -1 });
 
-		// Format the response to include the other user's details and last message
 		const formattedChats = chats.map((chat) => {
 			const otherUser =
 				chat.user1._id.toString() === userId ? chat.user2 : chat.user1;
@@ -300,7 +297,6 @@ app.get("/api/chats", authMiddleware, async (req, res) => {
 	}
 });
 
-// Search users by name or email
 app.post("/api/user/search", async (req, res) => {
 	try {
 		const { query } = req.body;
@@ -325,12 +321,10 @@ app.post("/api/user/search", async (req, res) => {
 	}
 });
 
-// Get user by ID
 app.get("/api/user/:id", async (req, res) => {
 	try {
 		const { id } = req.params;
 
-		// Validate if the id is a valid ObjectId
 		if (!mongoose.Types.ObjectId.isValid(id)) {
 			return res.status(400).json({ message: "Invalid user ID" });
 		}
@@ -350,7 +344,6 @@ app.get("/api/user/:id", async (req, res) => {
 	}
 });
 
-// Schedule automated reminders for pending responses
-setInterval(sendPendingResponseReminders, 5 * 60 * 1000); // Run every 5 minutes
+setInterval(sendPendingResponseReminders,100* 5 * 60 * 1000); 
 
 export { io };

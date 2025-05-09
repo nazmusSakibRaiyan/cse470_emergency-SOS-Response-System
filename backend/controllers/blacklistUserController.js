@@ -1,6 +1,6 @@
 import User from "../models/user.js";
 
-// Blacklist a user
+
 export const blacklistUser = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -10,7 +10,7 @@ export const blacklistUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    user.blacklisted = true; // Mark the user as blacklisted
+    user.blacklisted = true; 
     await user.save();
 
     res.status(200).json({ message: "User blacklisted successfully", user });
@@ -19,7 +19,6 @@ export const blacklistUser = async (req, res) => {
   }
 };
 
-// Get all blacklisted users
 export const getBlacklistedUsers = async (req, res) => {
   try {
     const blacklistedUsers = await User.find({ blacklisted: true }).select("-password -otp -otpExpires");
@@ -30,9 +29,6 @@ export const getBlacklistedUsers = async (req, res) => {
   }
 };
 
-
-//remove blacklist
-// Remove user from blacklist
 export const removeFromBlacklist = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);

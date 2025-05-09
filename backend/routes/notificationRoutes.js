@@ -9,10 +9,8 @@ import {
 
 const router = express.Router();
 
-// Protect all notification routes with authentication
 router.use(authMiddleware);
 
-// Notification routes
 router.get('/', getUserNotifications);
 router.put('/read/:notificationId', markNotificationAsRead);
 router.put('/read-all', markAllAsRead);

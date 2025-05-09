@@ -168,7 +168,6 @@ export const updateSOSReadStatus = async (req, res) => {
       return res.status(403).json({ message: 'Only volunteers can mark SOS alerts as read' });
     }
     
-    // Update the notification as read
     await Notification.findOneAndUpdate(
       {
         recipient: volunteerId,
@@ -181,8 +180,8 @@ export const updateSOSReadStatus = async (req, res) => {
         readAt: new Date()
       }
     );
-    
-    // Get the SOS to notify the user who created it
+
+
     const sos = await SOS.findById(sosId);
     if (!sos) {
       return res.status(404).json({ message: 'SOS not found' });
@@ -191,7 +190,6 @@ export const updateSOSReadStatus = async (req, res) => {
     const volunteer = await User.findById(volunteerId, 'name email');
     const sosCreator = await User.findById(sos.user);
     
-    // Send real-time notification to SOS creator that volunteer has seen the alert
     if (sosCreator && sosCreator.socketId) {
       io.to(sosCreator.socketId).emit('sosReadReceipt', {
         sosId,
@@ -210,10 +208,9 @@ export const updateSOSReadStatus = async (req, res) => {
   }
 };
 
-// Schedule and send automated reminders for volunteers
 export const sendPendingResponseReminders = async () => {
   try {
-    // Find all unresolved SOS alerts older than 5 minutes
+
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
     
     const pendingSOS = await SOS.find({
@@ -222,7 +219,7 @@ export const sendPendingResponseReminders = async () => {
     });
     
     for (const sos of pendingSOS) {
-      // Find volunteers who have been notified but haven't responded
+
       const notifiedVolunteers = await Notification.find({
         relatedId: sos._id,
         type: 'SOS',
@@ -230,7 +227,7 @@ export const sendPendingResponseReminders = async () => {
       });
       
       for (const notification of notifiedVolunteers) {
-        // Send reminder to volunteer
+
         createReminderNotification(
           notification.recipient,
           sos._id,

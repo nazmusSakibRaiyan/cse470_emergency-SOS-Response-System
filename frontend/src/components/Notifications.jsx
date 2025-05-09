@@ -1,316 +1,297 @@
-import React, { useState, useEffect } from "react";
-import {
-	Badge,
-	IconButton,
-	Menu,
-	MenuItem,
-	Divider,
-	Typography,
-	Button,
-	ListItemIcon,
-	ListItemText,
-	CircularProgress,
-} from "@mui/material";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import WarningIcon from "@mui/icons-material/Warning";
-import ChatIcon from "@mui/icons-material/Chat";
-import CampaignIcon from "@mui/icons-material/Campaign";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { useSocket } from "../context/SocketContext";
-import { format } from "date-fns";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
+import { toast } from "react-hot-toast";
+import { Bell, AlertTriangle, Info, Shield, Clock, CheckCircle, X, ChevronRight } from "lucide-react";
 
 const Notifications = () => {
-	const [anchorEl, setAnchorEl] = useState(null);
-	const [notifications, setNotifications] = useState([]);
-	const [sosAlerts, setSosAlerts] = useState([]); // New state for SOS alerts
-	const [loading, setLoading] = useState(false);
-	const navigate = useNavigate();
-	const { user, token } = useAuth();
-	const { unreadNotifications, resetUnreadNotifications } = useSocket();
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+  const { token } = useAuth();
 
-	const open = Boolean(anchorEl);
+  useEffect(() => {
+    if (token) {
+      fetchNotifications();
+      const interval = setInterval(fetchNotifications, 30000); // Refresh every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [token]);
 
-	// Fetch notifications when component mounts
-	useEffect(() => {
-		if (user) {
-			fetchNotifications();
-			fetchUnresolvedSOS(); // Fetch unresolved SOS alerts
-		}
-	}, [user]);
+  const fetchNotifications = async () => {
+    if (!token) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      console.log("Fetching notifications with token:", token ? "Token exists" : "No token");
+      const response = await axios.get(
+        "http://localhost:5000/api/notifications",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log("Notifications response:", response.data);
+      setNotifications(response.data);
+      
+      // Use isRead instead of read to match the backend field name
+      const unread = response.data.filter((notification) => !notification.isRead);
+      setUnreadCount(unread.length);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      setError("Failed to load notifications");
+      
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        console.error("Error response data:", error.response.data);
+        console.error("Error response status:", error.response.status);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
-	const fetchNotifications = async () => {
-		if (!user) return;
+  const markAsRead = async (id) => {
+    try {
+      await axios.put(
+        `http://localhost:5000/api/notifications/read/${id}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setNotifications((prevNotifications) =>
+        prevNotifications.map((notification) =>
+          notification._id === id
+            ? { ...notification, isRead: true }
+            : notification
+        )
+      );
+      setUnreadCount((prevCount) => Math.max(0, prevCount - 1));
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      toast.error("Failed to mark notification as read");
+    }
+  };
 
-		setLoading(true);
-		try {
-			const response = await axios.get(
-				"http://localhost:5000/api/notifications",
-				{
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
-				}
-			);
+  const handleNotificationClick = async (notification) => {
+    if (!notification.isRead) {
+      await markAsRead(notification._id);
+    }
+    
+    // Navigate based on notification type
+    if (notification.type === "SOS") {
+      navigate(`/sos/${notification.relatedId}`);
+    } else if (notification.type === "chat") {
+      navigate(`/chats/${notification.relatedId}`);
+    } else {
+      navigate("/dashboard");
+    }
+    
+    setShowNotifications(false);
+  };
 
-			setNotifications(response.data);
-		} catch (error) {
-			console.error("Error fetching notifications:", error);
-		} finally {
-			setLoading(false);
-		}
-	};
+  const markAllAsRead = async () => {
+    try {
+      await axios.put(
+        "http://localhost:5000/api/notifications/read-all",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setNotifications((prevNotifications) =>
+        prevNotifications.map((notification) => ({
+          ...notification,
+          isRead: true,
+        }))
+      );
+      setUnreadCount(0);
+      toast.success("All notifications marked as read");
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      toast.error("Failed to mark all as read");
+    }
+  };
 
-	const fetchUnresolvedSOS = async () => {
-		try {
-			const response = await axios.get("http://localhost:5000/api/sos", {
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			});
-			setSosAlerts(response.data);
-		} catch (error) {
-			console.error("Error fetching unresolved SOS alerts:", error);
-		}
-	};
+  // Format the time to be more readable
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.round(diffMs / 60000);
+    const diffHours = Math.round(diffMins / 60);
+    const diffDays = Math.round(diffHours / 24);
+    
+    if (diffMins < 60) {
+      return `${diffMins} min${diffMins !== 1 ? 's' : ''} ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    } else if (diffDays < 7) {
+      return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    } else {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+  };
 
-	const handleClick = (event) => {
-		setAnchorEl(event.currentTarget);
-		// When opening notifications, reset unread count
-		resetUnreadNotifications();
-		// Mark notifications as read
-		if (notifications.some((notif) => !notif.isRead)) {
-			markAllAsRead();
-		}
-	};
+  // Get icon based on notification type
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case "SOS":
+        return <AlertTriangle className="h-5 w-5 text-red-400" />;
+      case "user":
+        return <Shield className="h-5 w-5 text-blue-400" />;
+      case "chat":
+        return <Info className="h-5 w-5 text-green-400" />;
+      default:
+        return <Info className="h-5 w-5 text-gray-400" />;
+    }
+  };
 
-	const handleClose = () => {
-		setAnchorEl(null);
-	};
+  // Get background color based on notification type
+  const getNotificationBgColor = (type, read) => {
+    const baseClass = read ? "bg-slate-800/40" : "bg-slate-700/60";
+    
+    switch (type) {
+      case "SOS":
+        return `${baseClass} ${read ? "" : "border-l-4 border-red-500"} hover:bg-slate-700/80`;
+      case "user":
+        return `${baseClass} ${read ? "" : "border-l-4 border-blue-500"} hover:bg-slate-700/80`;
+      case "chat":
+        return `${baseClass} ${read ? "" : "border-l-4 border-green-500"} hover:bg-slate-700/80`;
+      case "REMINDER":
+        return `${baseClass} ${read ? "" : "border-l-4 border-yellow-500"} hover:bg-slate-700/80`;
+      default:
+        return `${baseClass} ${read ? "" : "border-l-4 border-gray-500"} hover:bg-slate-700/80`;
+    }
+  };
 
-	const markAllAsRead = async () => {
-		try {
-			await axios.put(
-				"http://localhost:5000/api/notifications/mark-all-read",
-				{},
-				{
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
-				}
-			);
+  return (
+    <div className="relative">
+      <button
+        className="relative flex items-center justify-center h-10 w-10 rounded-full bg-slate-800 hover:bg-slate-700 transition-colors"
+        onClick={() => {
+          setShowNotifications(!showNotifications);
+          if (!showNotifications) {
+            fetchNotifications(); // Refresh notifications when opening
+          }
+        }}
+        aria-label="Notifications"
+      >
+        <Bell className="h-5 w-5 text-gray-200" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
+            {unreadCount}
+          </span>
+        )}
+      </button>
 
-			// Update local notification state to mark all as read
-			setNotifications(
-				notifications.map((notif) => ({
-					...notif,
-					isRead: true,
-				}))
-			);
-		} catch (error) {
-			console.error("Error marking notifications as read:", error);
-		}
-	};
+      {showNotifications && (
+        <div className="absolute top-12 right-0 w-80 sm:w-96 bg-slate-900 border border-slate-700/50 rounded-lg shadow-lg z-50 overflow-hidden">
+          <div className="flex items-center justify-between bg-slate-800/80 backdrop-blur-sm p-4 border-b border-slate-700/50">
+            <h3 className="text-lg font-bold text-white flex items-center">
+              <Bell className="h-5 w-5 mr-2 text-blue-400" />
+              Notifications
+            </h3>
+            <div className="flex items-center space-x-2">
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  className="text-xs px-2 py-1 bg-blue-600/80 hover:bg-blue-600 text-white rounded-md transition-colors"
+                  title="Mark all as read"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                </button>
+              )}
+              <button
+                onClick={() => setShowNotifications(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+                title="Close notifications"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
 
-	const handleNotificationClick = (notification) => {
-		handleClose();
-
-		// Navigate based on notification type
-		switch (notification.type) {
-			case "SOS":
-				navigate(`/sos/${notification.relatedId}`);
-				break;
-			case "CHAT":
-				navigate(`/chat/${notification.relatedId}`);
-				break;
-			case "BROADCAST":
-				navigate("/broadcast");
-				break;
-			default:
-				// Default action is to do nothing
-				break;
-		}
-
-		// Mark this specific notification as read
-		if (!notification.isRead) {
-			markAsRead(notification._id);
-		}
-	};
-
-	const markAsRead = async (notificationId) => {
-		try {
-			await axios.put(
-				`http://localhost:5000/api/notifications/${notificationId}/read`,
-				{},
-				{
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
-				}
-			);
-
-			// Update local state
-			setNotifications(
-				notifications.map((notif) =>
-					notif._id === notificationId
-						? { ...notif, isRead: true }
-						: notif
-				)
-			);
-		} catch (error) {
-			console.error("Error marking notification as read:", error);
-		}
-	};
-
-	// Helper function to get the right icon for each notification type
-	const getNotificationIcon = (type) => {
-		switch (type) {
-			case "SOS":
-				return <WarningIcon color="error" />;
-			case "CHAT":
-				return <ChatIcon color="primary" />;
-			case "BROADCAST":
-				return <CampaignIcon color="action" />;
-			default:
-				return <NotificationsIcon color="disabled" />;
-		}
-	};
-
-	// Format the timestamp
-	const formatTime = (timestamp) => {
-		try {
-			return format(new Date(timestamp), "MMM d, h:mm a");
-		} catch (error) {
-			return "Unknown time";
-		}
-	};
-
-	return (
-		<div>
-			<IconButton
-				onClick={handleClick}
-				size="large"
-				aria-controls={open ? "notifications-menu" : undefined}
-				aria-haspopup="true"
-				aria-expanded={open ? "true" : undefined}
-				color="inherit"
-			>
-				<Badge badgeContent={unreadNotifications} color="error">
-					<NotificationsIcon />
-				</Badge>
-			</IconButton>
-
-			<Menu
-				id="notifications-menu"
-				anchorEl={anchorEl}
-				open={open}
-				onClose={handleClose}
-				MenuListProps={{
-					"aria-labelledby": "notifications-button",
-				}}
-				PaperProps={{
-					style: {
-						maxHeight: "400px",
-						width: "350px",
-					},
-				}}
-			>
-				<div className="p-2 flex justify-between items-center">
-					<Typography variant="subtitle1" className="font-bold">
-						Notifications
-					</Typography>
-					{notifications.length > 0 && (
-						<Button
-							size="small"
-							onClick={markAllAsRead}
-							startIcon={<CheckCircleIcon fontSize="small" />}
-						>
-							Mark all read
-						</Button>
-					)}
-				</div>
-
-				<Divider />
-
-				{/* Display unresolved SOS alerts */}
-				{sosAlerts.length > 0 && (
-					<>
-						<Typography
-							variant="subtitle2"
-							className="px-4 pt-2 font-bold"
-						>
-							Unresolved SOS Alerts
-						</Typography>
-						{sosAlerts.map((sos) => (
-							<MenuItem
-								key={sos._id}
-								onClick={() => navigate(`/sos/${sos._id}`)}
-							>
-								<ListItemIcon>
-									<WarningIcon color="error" />
-								</ListItemIcon>
-								<ListItemText
-									primary={`SOS from ${
-										sos.user?.name || "Unknown"
-									}`}
-									secondary={new Date(
-										sos.createdAt
-									).toLocaleString()}
-								/>
-							</MenuItem>
-						))}
-						<Divider />
-					</>
-				)}
-
-				{loading ? (
-					<div className="flex justify-center p-4">
-						<CircularProgress size={24} />
-					</div>
-				) : notifications.length === 0 ? (
-					<MenuItem disabled>
-						<Typography variant="body2" className="text-gray-500">
-							No notifications
-						</Typography>
-					</MenuItem>
-				) : (
-					notifications.map((notification) => (
-						<React.Fragment key={notification._id}>
-							<MenuItem
-								onClick={() =>
-									handleNotificationClick(notification)
-								}
-								selected={!notification.isRead}
-								className={
-									!notification.isRead ? "bg-blue-50" : ""
-								}
-							>
-								<ListItemIcon>
-									{getNotificationIcon(notification.type)}
-								</ListItemIcon>
-								<ListItemText
-									primary={notification.title}
-									secondary={
-										<div className="flex flex-col">
-											<span>{notification.message}</span>
-											<span className="text-xs text-gray-500 mt-1">
-												{formatTime(
-													notification.createdAt
-												)}
-											</span>
-										</div>
-									}
-								/>
-							</MenuItem>
-							<Divider component="li" />
-						</React.Fragment>
-					))
-				)}
-			</Menu>
-		</div>
-	);
+          <div className="max-h-[80vh] overflow-y-auto">
+            {loading ? (
+              <div className="py-10 px-4 text-center">
+                <p className="text-gray-400">Loading notifications...</p>
+              </div>
+            ) : error ? (
+              <div className="py-10 px-4 text-center">
+                <p className="text-red-400">{error}</p>
+                <button 
+                  onClick={fetchNotifications}
+                  className="mt-2 text-xs px-3 py-1 bg-blue-600/80 hover:bg-blue-600 text-white rounded-md transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="py-10 px-4 text-center">
+                <div className="bg-slate-800/50 h-14 w-14 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Bell className="h-6 w-6 text-gray-400" />
+                </div>
+                <p className="text-gray-400">No notifications yet</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-700/50">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification._id}
+                    onClick={() => handleNotificationClick(notification)}
+                    className={`${getNotificationBgColor(notification.type, notification.isRead)} p-3 cursor-pointer transition-colors`}
+                  >
+                    <div className="flex items-start">
+                      <div className={`p-2 rounded-full bg-slate-800/50 mt-0.5 mr-3`}>
+                        {getNotificationIcon(notification.type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline justify-between mb-1">
+                          <h4 className={`font-medium ${notification.isRead ? 'text-gray-300' : 'text-white'} truncate text-sm`}>
+                            {notification.title}
+                          </h4>
+                          <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
+                            <Clock className="inline h-3 w-3 mr-1" />
+                            {formatTime(notification.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-gray-400 text-sm line-clamp-2">
+                          {notification.message}
+                        </p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-gray-500 mt-1.5 ml-1.5 flex-shrink-0" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {/* Backdrop for closing notifications when clicked outside */}
+      {showNotifications && (
+        <div 
+          className="fixed inset-0 z-40"
+          onClick={() => setShowNotifications(false)}
+        />
+      )}
+    </div>
+  );
 };
 
 export default Notifications;

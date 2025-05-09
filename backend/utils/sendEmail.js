@@ -4,41 +4,88 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Create a transporter for sending emails
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Promise Rejection:', reason);
+
+});
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS, 
   },
+  pool: true,
+  maxConnections: 5,
+  maxMessages: 100,
+  rateDelta: 1000,
+  rateLimit: 5
 });
 
-// Generic email sending function
-export const sendEmail = async (to, subject, text, html = null) => {
-  try {
-    const mailOptions = {
-      from: `"Quick Response Team" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      text,
-      html: html || undefined
-    };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent:", info.messageId);
-    return info;
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000; // milliseconds
+
+/**
+ * Retry function with exponential backoff
+ * @param {Function} fn - Function to retry
+ * @param {number} retries - Number of retries left
+ * @param {number} delay - Delay between retries in ms
+ * @param {Array} args - Arguments to pass to the function
+ */
+const retry = async (fn, retries, delay, ...args) => {
+  try {
+    return await fn(...args);
   } catch (error) {
-    console.error("Failed to send email:", error);
-    throw error;
+
+    if (error.responseCode === 421 && retries > 0) {
+      console.log(`Temporary email error, retrying (${MAX_RETRIES - retries + 1}/${MAX_RETRIES})...`);
+      // Wait for the delay
+      await new Promise(resolve => setTimeout(resolve, delay));
+
+      return retry(fn, retries - 1, delay * 1.5, ...args);
+    }
+    
+    console.error(`Email error after ${MAX_RETRIES} retries:`, error);
+
+    return null;
   }
 };
 
-// Send broadcast emails
+export const sendEmail = async (to, subject, text, html = null) => {
+  const mailOptions = {
+    from: `"Quick Response Team" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    text,
+    html: html || undefined
+  };
+
+  try {
+
+    const info = await retry(async () => {
+      return await transporter.sendMail(mailOptions);
+    }, MAX_RETRIES, RETRY_DELAY);
+    
+    if (info) {
+      console.log("Email sent:", info.messageId);
+      return info;
+    } else {
+      console.warn("Failed to send email after retries");
+      return null;
+    }
+  } catch (error) {
+    console.error("Failed to send email:", error);
+
+    return null;
+  }
+};
+
 export const sendBroadcastEmail = async (to, subject, text) => {
   return sendEmail(to, subject, text);
 };
 
-// Send SOS alert to emergency contacts
+
 export const sendSOSEmergencyAlert = async (to, userName, message, coordinates, timestamp) => {
   const subject = `URGENT: SOS EMERGENCY ALERT - ${userName} NEEDS HELP`;
   
@@ -67,7 +114,11 @@ export const sendSOSEmergencyAlert = async (to, userName, message, coordinates, 
     This is an automated emergency alert from the Quick Response Team app. Please contact emergency services if you believe this is a serious situation.
   `;
   
-  return sendEmail(to, subject, textContent, htmlContent);
+  return sendEmail(to, subject, textContent, htmlContent).catch(error => {
+    console.error("Failed to send emergency alert:", error);
+    // Don't throw - prevent crashes for critical functionality
+    return null;
+  });
 };
 
 // Send SMS via email-to-SMS gateways (major US carriers)
@@ -103,15 +154,21 @@ export const sendSMS = async (phoneNumber, message, carrier) => {
       from: `"EMERGENCY" <${process.env.EMAIL_USER}>`,
       to: recipient,
       subject: 'SOS ALERT',
-      text: message.substring(0, 160) // SMS typically limited to 160 chars
+      text: message.substring(0, 160) 
     };
     
-    const info = await transporter.sendMail(mailOptions);
-    console.log("SMS sent via email gateway:", info.messageId);
-    return info;
+    const info = await retry(async () => {
+      return await transporter.sendMail(mailOptions);
+    }, MAX_RETRIES, RETRY_DELAY);
+    
+    if (info) {
+      console.log("SMS sent via email gateway:", info.messageId);
+      return info;
+    }
+    return null;
   } catch (error) {
     console.error("Failed to send SMS via email gateway:", error);
-    // Don't throw error for SMS, as it's a best-effort attempt
+
     return null;
   }
 };

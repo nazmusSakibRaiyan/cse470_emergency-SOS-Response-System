@@ -8,10 +8,10 @@ export const getAllUsers = async (req, res) => {
 	try {
 		const users = await User.find({ 
 			_id: { $ne: req.user.id },
-			blacklisted: { $ne: true }  // Exclude blacklisted users
+			blacklisted: { $ne: true }  
 		}).select(
 			"-password -otp -otpExpires"
-		); // omit sensitive fields
+		); 
 		res.status(200).json(users);
 	} catch (error) {
 		console.error("Error fetching users:", error);
@@ -19,7 +19,7 @@ export const getAllUsers = async (req, res) => {
 	}
 };
 
-// Delete a user by ID
+
 export const deleteUser = async (req, res) => {
 	try {
 		const user = await User.findById(req.params.id);
@@ -36,7 +36,7 @@ export const deleteUser = async (req, res) => {
 	}
 };
 
-// Verify a volunteer
+
 export const verifyVolunteer = async (req, res) => {
 	try {
 		const user = await User.findById(req.params.id);
@@ -52,11 +52,10 @@ export const verifyVolunteer = async (req, res) => {
 		}
 
 		user.isVerified = true;
-		user.isApproved = true;  // Also approve the volunteer
+		user.isApproved = true;  
 		user.verifiedAt = new Date();
 		await user.save();
 
-		// Send email notification to the volunteer
 		try {
 			const transporter = nodemailer.createTransport({
 				service: "gmail",
@@ -77,7 +76,7 @@ export const verifyVolunteer = async (req, res) => {
 			});
 		} catch (emailError) {
 			console.error("Error sending verification email:", emailError);
-			// Continue with the process even if email fails
+
 		}
 
 		res.status(200).json({ message: "Volunteer verified and approved successfully" });
@@ -87,12 +86,12 @@ export const verifyVolunteer = async (req, res) => {
 	}
 };
 
-// Get users pending approval
+
 export const getPendingUsers = async (req, res) => {
     try {
         const pendingUsers = await User.find({ 
             isApproved: false,
-            _id: { $ne: req.user.id } // Exclude the current admin making the request
+            _id: { $ne: req.user.id } 
         }).select("-password -otp -otpExpires");
         
         res.status(200).json(pendingUsers);
@@ -102,7 +101,6 @@ export const getPendingUsers = async (req, res) => {
     }
 };
 
-// Approve or reject a user
 export const approveOrRejectUser = async (req, res) => {
     try {
         const { userId, action } = req.body;
@@ -128,7 +126,6 @@ export const approveOrRejectUser = async (req, res) => {
     }
 };
 
-// Get unverified volunteers only
 export const getUnverifiedVolunteers = async (req, res) => {
     try {
         const unverifiedVolunteers = await User.find({ 

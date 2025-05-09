@@ -13,15 +13,15 @@ const UserSchema = new mongoose.Schema(
 		otpExpires: { type: Date },
 		blacklisted: { type: Boolean, default: false },
 		isVerified: { type: Boolean, default: false },
-		verifiedAt: { type: Date }, // New field to track verification timestamp
-		isApproved: { type: Boolean, default: false }, // New field for admin approval
+		verifiedAt: { type: Date }, 
+		isApproved: { type: Boolean, default: false }, 
 		volunteerStatus: {
 			type: String,
 			enum: ["active", "inactive"],
 			default: "active",
 		},
 		isAdmin: { type: Boolean, default: false },
-		socketId: { type: String, default: null }, // Added for real-time communication
+		socketId: { type: String, default: null }, 
 	},
 	{ timestamps: true }
 );

@@ -6,7 +6,6 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Nodemailer Setup
 const transporter = nodemailer.createTransport({
 	service: "gmail",
 	auth: {
@@ -32,7 +31,6 @@ export const register = async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user with proper verification settings
     const newUser = new User({ 
       name, 
       email, 
@@ -41,13 +39,11 @@ export const register = async (req, res) => {
       role, 
       address, 
       nid,
-      // If the role is volunteer, set isVerified to false and isApproved to false
       isVerified: role !== "volunteer",
       isApproved: role !== "volunteer"
     });
     await newUser.save();
 
-    // Send Welcome Email with appropriate message
     const emailSubject = "Welcome to SOS";
     let emailText = `Hi ${name},\n\nThank you for registering on SOS! We're excited to have you on board.`;
     
@@ -115,32 +111,30 @@ export const login = async (req, res) => {
   }
 };
 
-// Verify OTP & Generate JWT Token (Step 2)
 export const verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-    // Find user
+
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "User not found" });
 
-    // Check OTP
+
     if (user.otp !== otp || user.otpExpires < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    // Generate JWT Token
+ 
     const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, {
       expiresIn: "10d",
     });
     console.log("Generated Token:", token); 
 
-    // Clear OTP
+
     user.otp = null;
     user.otpExpires = null;
     await user.save();
 
-    // Send back the token and user details (excluding sensitive info)
     res.status(200).json({
       message: "Login successful",
       token,
@@ -177,10 +171,10 @@ export const getUser = async (req, res) => {
   }
 };
 
-// Update User Profile
+
 export const updateProfile = async (req, res) => {
   try {
-    const userId = req.user.userId; // Assuming authMiddleware adds userId to req.user
+    const userId = req.user.userId; 
     const { name, email, phone, address, nid } = req.body;
 
     const user = await User.findById(userId);
@@ -188,10 +182,9 @@ export const updateProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Update fields if they are provided in the request body
     if (name) user.name = name;
     if (email) {
-      // Check if the new email is already taken by another user
+
       if (email !== user.email) {
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -206,7 +199,6 @@ export const updateProfile = async (req, res) => {
 
     await user.save();
 
-    // Return updated user information (excluding sensitive data)
     res.status(200).json({
       message: "Profile updated successfully",
       user: {
@@ -224,7 +216,7 @@ export const updateProfile = async (req, res) => {
   }
 };
 
-// Delete User Account
+
 export const deleteAccount = async (req, res) => {
   try {
     const userId = req.user.userId;

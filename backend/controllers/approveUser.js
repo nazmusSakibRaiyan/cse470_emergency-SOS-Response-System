@@ -1,7 +1,6 @@
 import User from "../models/user.js";
 import { sendEmail } from "../utils/sendEmail.js";
 
-// Approve a user
 export const approveUser = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
@@ -13,7 +12,6 @@ export const approveUser = async (req, res) => {
         user.isApproved = true;
         await user.save();
 
-        // Send approval notification email
         try {
             await sendEmail(
                 user.email,
@@ -31,7 +29,6 @@ export const approveUser = async (req, res) => {
     }
 };
 
-// Reject and delete a user
 export const rejectUser = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
@@ -40,7 +37,6 @@ export const rejectUser = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Send rejection notification email before deletion
         try {
             await sendEmail(
                 user.email,
@@ -51,7 +47,6 @@ export const rejectUser = async (req, res) => {
             console.error("Failed to send rejection email:", emailError);
         }
 
-        // Delete the user
         await user.deleteOne();
 
         res.status(200).json({ message: "User rejected and deleted successfully" });
