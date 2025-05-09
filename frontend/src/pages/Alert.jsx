@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSocket } from "../context/SocketContext";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-hot-toast";
@@ -10,12 +10,14 @@ import {
 	CheckCircle,
 	XCircle,
 	Phone,
-} from "lucide-react";
+	} from "lucide-react";
 
 const Alert = () => {
-	const socket = useSocket();
+	const { socket, updateVolunteerLocation } = useSocket();
 	const { token, user, loading } = useAuth();
 	const [notifications, setNotifications] = useState([]);
+	const [acceptedSOS, setAcceptedSOS] = useState(new Set());
+	const locationIntervalRefs = useRef({});
 	const navigate = useNavigate();
 
 	useEffect(() => {
@@ -39,6 +41,14 @@ const Alert = () => {
 				if (res.ok) {
 					const data = await res.json();
 					setNotifications(data);
+					
+					// Check if the volunteer has already accepted any of these SOS alerts
+					data.forEach(sos => {
+						if (sos.acceptedBy.includes(user._id)) {
+							setAcceptedSOS(prev => new Set([...prev, sos._id]));
+							startLocationTracking(sos._id);
+						}
+					});
 				} else {
 					toast.error("Failed to fetch unresolved SOS.");
 				}
@@ -47,16 +57,86 @@ const Alert = () => {
 			}
 		};
 
-		fetchUnresolvedSOS();
-	}, [token]);
+		if (token && user) {
+			fetchUnresolvedSOS();
+		}
+		
+		return () => {
+			// Clean up location tracking intervals when component unmounts
+			Object.values(locationIntervalRefs.current).forEach(interval => {
+				clearInterval(interval);
+			});
+		};
+	}, [token, user]);
 
 	useEffect(() => {
 		if (socket) {
 			socket.on("newSOS", (data) => {
 				setNotifications((prev) => [data, ...prev]);
 			});
+			
+			// Listen for SOS resolution notifications
+			socket.on("sosResolved", (data) => {
+				toast.info(`SOS alert has been resolved by the user.`);
+				
+				// Stop location tracking for this SOS
+				if (locationIntervalRefs.current[data.sosId]) {
+					clearInterval(locationIntervalRefs.current[data.sosId]);
+					delete locationIntervalRefs.current[data.sosId];
+				}
+				
+				// Remove the resolved SOS from the notifications list
+				setNotifications(prev => prev.filter(sos => sos._id !== data.sosId));
+				
+				// Remove from accepted SOS set
+				setAcceptedSOS(prev => {
+					const updated = new Set(prev);
+					updated.delete(data.sosId);
+					return updated;
+				});
+			});
 		}
+		
+		return () => {
+			if (socket) {
+				socket.off("newSOS");
+				socket.off("sosResolved");
+			}
+		};
 	}, [socket]);
+
+	// Start sending periodic location updates after accepting an SOS
+	const startLocationTracking = (sosId) => {
+		// Clear any existing interval for this SOS
+		if (locationIntervalRefs.current[sosId]) {
+			clearInterval(locationIntervalRefs.current[sosId]);
+		}
+		
+		// Function to send current location
+		const sendLocation = () => {
+			if (navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(
+					(position) => {
+						const coordinates = {
+							latitude: position.coords.latitude,
+							longitude: position.coords.longitude
+						};
+						updateVolunteerLocation(sosId, coordinates);
+					},
+					(error) => {
+						console.error("Error getting location:", error);
+					}
+				);
+			}
+		};
+		
+		// Send location immediately
+		sendLocation();
+		
+		// Then send every 30 seconds
+		const intervalId = setInterval(sendLocation, 30000);
+		locationIntervalRefs.current[sosId] = intervalId;
+	};
 
 	const handleAcceptSOS = async (sosId) => {
 		try {
@@ -70,6 +150,8 @@ const Alert = () => {
 			});
 			if (res.ok) {
 				toast.success("SOS accepted successfully!");
+				
+				// Update UI to show this SOS as accepted
 				setNotifications((prev) =>
 					prev.map((sos) =>
 						sos._id === sosId
@@ -80,6 +162,12 @@ const Alert = () => {
 							: sos
 					)
 				);
+				
+				// Add to set of accepted SOS
+				setAcceptedSOS(prev => new Set([...prev, sosId]));
+				
+				// Start sending location updates
+				startLocationTracking(sosId);
 			} else {
 				toast.error("Failed to accept SOS.");
 			}
@@ -103,6 +191,21 @@ const Alert = () => {
 			);
 			if (res.ok) {
 				toast.success("SOS marked as resolved!");
+				
+				// Stop location tracking for this SOS
+				if (locationIntervalRefs.current[sosId]) {
+					clearInterval(locationIntervalRefs.current[sosId]);
+					delete locationIntervalRefs.current[sosId];
+				}
+				
+				// Remove from accepted SOS set
+				setAcceptedSOS(prev => {
+					const updated = new Set(prev);
+					updated.delete(sosId);
+					return updated;
+				});
+				
+				// Remove from notifications
 				setNotifications((prev) =>
 					prev.filter((sos) => sos._id !== sosId)
 				);
@@ -198,15 +301,13 @@ const Alert = () => {
 									>
 										Mark as Resolved
 									</button>
-								) : notification.acceptedBy.includes(
-										user._id
-								  ) ? (
+								) : acceptedSOS.has(notification._id) ? (
 									<div className="flex items-center text-green-600">
 										<CheckCircle
 											className="mr-2"
 											size={18}
 										/>
-										<span>Accepted</span>
+										<span>Accepted (Sending location updates)</span>
 									</div>
 								) : (
 									<button
