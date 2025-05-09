@@ -2,18 +2,29 @@ import { useEffect, useState } from "react";
 import { useSocket } from "../context/SocketContext";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import {
 	MapPin,
 	User,
 	AlertTriangle,
 	CheckCircle,
 	XCircle,
+	Phone,
 } from "lucide-react";
 
 const Alert = () => {
 	const socket = useSocket();
-	const { token, user } = useAuth();
+	const { token, user, loading } = useAuth();
 	const [notifications, setNotifications] = useState([]);
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		if (loading) return;
+
+		if (user && user.role !== "volunteer") {
+			navigate("/");
+		}
+	}, [user]);
 
 	useEffect(() => {
 		// Fetch unresolved SOS on component mount
@@ -137,6 +148,19 @@ const Alert = () => {
 								<span className="ml-1">
 									{notification.user.name}
 								</span>
+							</p>
+							<p className="text-gray-800 mb-2 flex items-center">
+								<Phone
+									className="mr-2 text-gray-600"
+									size={18}
+								/>
+								<strong>Phone:</strong>{" "}
+								<a
+									href={`tel:${notification.user.phone}`}
+									className="ml-1 text-blue-600 underline"
+								>
+									{notification.user.phone}
+								</a>
 							</p>
 							<p className="text-gray-800 mb-2">
 								<strong>Message:</strong> {notification.message}

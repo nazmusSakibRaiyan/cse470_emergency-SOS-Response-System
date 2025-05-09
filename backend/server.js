@@ -8,6 +8,10 @@ import contactRoutes from "./routes/contactRoutes.js";
 import userRoute from "./routes/userRoute.js";
 import { Server } from "socket.io";
 
+import broadcastRoutes from "./routes/broadcastRoutes.js";
+import userManagementRoutes from "./routes/userManagementRoutes.js";
+import blacklistUserRoutes from "./routes/blacklistUserRoutes.js";
+
 dotenv.config();
 
 const app = express();
@@ -27,6 +31,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/sos", sosRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/user", userRoute);
+app.use("/api/broadcast", broadcastRoutes);
+app.use("/api/user-management", userManagementRoutes);
+app.use("/api/blacklist-users", blacklistUserRoutes);
 
 const PORT = process.env.PORT || 5000;
 
