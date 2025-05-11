@@ -32,12 +32,11 @@ const NearbySOSMap = () => {
   const [mapInitialized, setMapInitialized] = useState(false);
   const [pulsating, setPulsating] = useState(true);
   
-  // This would be replaced with actual map markers when the real map is loaded
   const [mapReady, setMapReady] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    // Get user's location
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
@@ -81,7 +80,7 @@ const NearbySOSMap = () => {
 
     fetchActiveSOSAlerts();
 
-    // Listen for new SOS alerts
+  
     if (socket) {
       socket.on("newSOS", (data) => {
         toast.error("🚨 NEW EMERGENCY ALERT!", {
@@ -111,13 +110,8 @@ const NearbySOSMap = () => {
     };
   }, [token, user, socket, navigate, selectedSOS]);
 
-  // For demonstration: this would be replaced with actual map initialization
   useEffect(() => {
     if (userLocation && !mapInitialized) {
-      // In a real implementation, this is where you'd initialize the map
-      // using libraries like Leaflet or Google Maps
-      
-      // Simulate map loading
       setTimeout(() => {
         setMapReady(true);
         setMapInitialized(true);
@@ -150,7 +144,6 @@ const NearbySOSMap = () => {
 
       toast.success("You have accepted this emergency alert");
       
-      // Start location tracking and navigate to SOS detail page
       navigate(`/sos/${selectedSOS._id}`);
     } catch (error) {
       console.error("Error accepting SOS:", error);
@@ -182,7 +175,7 @@ const NearbySOSMap = () => {
   };
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Radius of the Earth in km
+    const R = 6371; 
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
     const a =
@@ -190,16 +183,14 @@ const NearbySOSMap = () => {
       Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
       Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return (R * c).toFixed(1); // Distance in km
+    return (R * c).toFixed(1); 
   };
 
-  // Helper to format time
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Helper to get elapsed time
   const getElapsedTime = (dateString) => {
     const now = new Date();
     const past = new Date(dateString);
@@ -215,13 +206,12 @@ const NearbySOSMap = () => {
     return `${days} day${days > 1 ? 's' : ''} ago`;
   };
 
-  // This would normally be handled by the map library
   const renderMockMap = () => {
     if (!userLocation) return null;
     
     return (
       <div className="relative h-[500px] bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
-        {/* Mock map content */}
+
         <div className="absolute top-4 left-4 z-30 flex space-x-2">
           <button className="bg-slate-800/90 hover:bg-slate-700 text-white px-3 py-2 rounded-lg flex items-center text-sm">
             <Target className="h-4 w-4 mr-1" />
@@ -245,9 +235,8 @@ const NearbySOSMap = () => {
         
         <div className="absolute inset-0 bg-gradient-to-b from-slate-900/40 to-slate-900/0 pointer-events-none"></div>
         
-        {/* Map background - would be replaced with actual map */}
         <div className="h-full w-full bg-[#0e2e3a]">
-          {/* Grid pattern for map background */}
+
           <div className="w-full h-full opacity-10" 
             style={{
               backgroundImage: 'linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)',
@@ -255,9 +244,8 @@ const NearbySOSMap = () => {
             }}
           ></div>
 
-          {/* Visualization - this would be replaced with React Leaflet or similar */}
           <div className="absolute inset-0 flex items-center justify-center">
-            {/* Your position indicator */}
+
             <div className="absolute z-20" 
               style={{top: '50%', left: '50%', transform: 'translate(-50%, -50%)'}}>
               <div className="h-5 w-5 bg-blue-500 rounded-full border-2 border-white">
@@ -268,7 +256,7 @@ const NearbySOSMap = () => {
               </div>
             </div>
 
-            {/* SOS Alerts */}
+
             {sosAlerts.map((sos, index) => {
               const distance = userLocation && sos.coordinates ? 
                 calculateDistance(
@@ -278,8 +266,6 @@ const NearbySOSMap = () => {
                   sos.coordinates.longitude
                 ) : null;
                 
-              // Create positions based on distance for the mock map
-              // In real implementation this would be geo coordinates
               const angle = (index * (360 / sosAlerts.length)) * (Math.PI / 180);
               const scaledDistance = distance ? Math.min(distance * 5, 120) : 50 + (index * 20);
               const top = 50 + Math.sin(angle) * scaledDistance;
@@ -324,7 +310,6 @@ const NearbySOSMap = () => {
   return (
     <div className="p-4 bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen text-white">
       <div className="max-w-7xl mx-auto">
-        {/* Header with animated emergency lights effect */}
         <div className="relative flex items-center justify-center mb-8 py-4 border-b border-red-500/30">
           <div className={`absolute -left-2 w-4 h-4 rounded-full bg-red-600 ${pulsating ? 'animate-ping' : ''}`}></div>
           <div className={`absolute -right-2 w-4 h-4 rounded-full bg-blue-600 ${pulsating ? 'animate-ping' : ''}`}></div>
@@ -333,21 +318,18 @@ const NearbySOSMap = () => {
             Emergency Response Map
           </h1>
         </div>
-
-        {/* Main content */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {/* Map section - larger column */}
+
           <div className="md:col-span-2 lg:col-span-3">
             {renderMockMap()}
             
-            {/* Map explanation for demonstration */}
+
             <div className="mt-3 bg-slate-800/60 backdrop-blur-sm rounded-lg p-4 text-sm text-gray-400">
               This is a prototype visualization showing nearby emergency alerts. In the final implementation, 
               this would be an interactive map using Leaflet or Google Maps showing accurate geo-positions.
             </div>
           </div>
 
-          {/* Sidebar with alert list */}
           <div className="md:col-span-1">
             <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden h-full">
               <div className="bg-gradient-to-r from-slate-700/80 to-slate-700/40 px-4 py-3 flex justify-between items-center">
@@ -430,7 +412,6 @@ const NearbySOSMap = () => {
         </div>
       </div>
 
-      {/* SOS Detail Slide-over */}
       {drawerOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 overflow-hidden flex justify-end">
           <div 
@@ -439,7 +420,7 @@ const NearbySOSMap = () => {
               boxShadow: "-10px 0 40px rgba(0, 0, 0, 0.5)"
             }}
           >
-            {/* Header */}
+ 
             <div className="border-b border-slate-700 p-4 flex justify-between items-center">
               <h3 className="font-bold text-xl flex items-center text-red-400">
                 <AlertTriangle className="h-5 w-5 mr-2" />
@@ -453,7 +434,7 @@ const NearbySOSMap = () => {
               </button>
             </div>
 
-            {/* Content */}
+  
             {selectedSOS && (
               <div className="p-4 overflow-auto max-h-screen pb-20">
                 <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4 mb-6">
@@ -500,7 +481,7 @@ const NearbySOSMap = () => {
 
                 {selectedSOS.coordinates ? (
                   <div className="bg-slate-800 border border-slate-700/50 rounded-xl overflow-hidden mb-6">
-                    {/* Small static map preview (would be real in production) */}
+
                     <div className="h-40 bg-slate-700 relative">
                       <div className="absolute inset-0 bg-gradient-to-b from-slate-900/40 to-slate-900/0"></div>
                       <div className="absolute inset-0 flex items-center justify-center text-white">
@@ -548,7 +529,7 @@ const NearbySOSMap = () => {
                   </div>
                 )}
 
-                {/* Responder information */}
+
                 <h4 className="font-medium text-gray-300 mb-3">Response Status</h4>
                 <div className="bg-slate-800 border border-slate-700/50 rounded-xl p-4 mb-6">
                   <div className="flex items-center justify-between mb-3">
@@ -573,8 +554,7 @@ const NearbySOSMap = () => {
                 </div>
               </div>
             )}
-            
-            {/* Action buttons fixed at bottom */}
+
             <div className="absolute bottom-0 left-0 right-0 p-4 bg-slate-900 border-t border-slate-700">
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -596,7 +576,7 @@ const NearbySOSMap = () => {
         </div>
       )}
       
-      {/* Custom CSS for animations */}
+
       <style jsx>{`
         @keyframes pulseSlow {
           0%, 100% { opacity: 1; }

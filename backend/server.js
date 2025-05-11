@@ -55,13 +55,11 @@ const io = new Server(server, {
 	},
 });
 
-// Attach io to the app object
 app.set("io", io);
 
 io.on("connection", (socket) => {
 	console.log("A user connected:", socket.id);
 
-	// Store socket.id in User document when user authenticates
 	socket.on("authenticate", async ({ userId }) => {
 		try {
 			if (!userId) return;
@@ -74,7 +72,6 @@ io.on("connection", (socket) => {
 					`User ${userId} authenticated with socket ${socket.id}`
 				);
 
-				// Join the user to a room based on their userId
 				socket.join(userId);
 			}
 		} catch (error) {
@@ -96,11 +93,9 @@ io.on("connection", (socket) => {
 			// Find the user who created the SOS
 			const sosUser = await User.findById(sos.user);
 			if (sosUser && sosUser.socketId) {
-				// Get volunteer info for identification
 				const volunteer = await User.findById(volunteerId);
 				if (!volunteer) return;
 
-				// Send location update directly to the user who created the SOS
 				io.to(sosUser.socketId).emit("respondingVolunteerLocation", {
 					sosId,
 					volunteerId,
@@ -117,7 +112,6 @@ io.on("connection", (socket) => {
 		try {
 			const { sosId, volunteerId } = data;
 
-			// Mark SOS notification as read
 			await Notification.findOneAndUpdate(
 				{
 					recipient: volunteerId,
@@ -175,7 +169,6 @@ io.on("connection", (socket) => {
 			chat.messages.push({ message, sender: senderId });
 			await chat.save();
 
-			// Emit the new message to the receiver's room
 			io.to(receiverId).emit("newMessage", { message, sender: senderId });
 		} catch (error) {
 			console.error("Error sending message:", error);
@@ -185,7 +178,6 @@ io.on("connection", (socket) => {
 	socket.on("disconnect", async () => {
 		console.log("A user disconnected:", socket.id);
 
-		// Clear socketId from User document on disconnect
 		try {
 			await User.findOneAndUpdate(
 				{ socketId: socket.id },
@@ -245,7 +237,6 @@ app.post("/api/chats/:receiverId", authMiddleware, async (req, res) => {
 		chat.messages.push({ message, sender: userId });
 		await chat.save();
 
-		// Emit the new message via socket.io
 		const io = req.app.get("io");
 		if (io) {
 			io.to(receiverId).emit("newMessage", { message, sender: userId });

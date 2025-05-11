@@ -20,13 +20,11 @@ export default function SOS() {
 	const [pulsating, setPulsating] = useState(true);
 
 	useEffect(() => {
-		// Fetch user's current location
 		navigator.geolocation.getCurrentPosition(
 			async (position) => {
 				const { latitude, longitude } = position.coords;
 				setCoordinates({ latitude, longitude });
 
-				// Fetch location name using a free API
 				try {
 					const res = await fetch(
 						`https://geocode.maps.co/reverse?lat=${latitude}&lon=${longitude}`
@@ -43,14 +41,11 @@ export default function SOS() {
 			}
 		);
 
-		// Fetch user's SOS
 		fetchMySOS();
 
-		// Fetch all non-resolved SOS
 		fetchNonResolvedSOS();
 	}, []);
 
-	// Listen for SOS read receipts
 	useEffect(() => {
 		if (!socket) return;
 
@@ -91,7 +86,6 @@ export default function SOS() {
 			const data = await res.json();
 			setMySOS(data);
 
-			// Fetch read receipts for each SOS
 			for (const sos of data) {
 				if (!sos.isResolved) {
 					fetchSOSDetails(sos._id);
@@ -210,7 +204,6 @@ export default function SOS() {
 		}
 	};
 
-	// Helper function to check if a volunteer has responded to an SOS
 	const hasResponders = (sosId) => {
 		return (
 			respondingVolunteers[sosId] &&
@@ -218,7 +211,6 @@ export default function SOS() {
 		);
 	};
 
-	// Helper to format date
 	const formatDate = (date) => {
 		return new Date(date).toLocaleString();
 	};
@@ -226,7 +218,6 @@ export default function SOS() {
 	return (
 		<div className="p-4 bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen text-white">
 			<div className="max-w-4xl mx-auto">
-				{/* Header with animated emergency lights effect */}
 				<div className="relative flex items-center justify-center mb-6 py-4 border-b border-red-500/30">
 					<div className={`absolute -left-2 w-4 h-4 rounded-full bg-red-600 ${pulsating ? 'animate-ping' : ''}`}></div>
 					<div className={`absolute -right-2 w-4 h-4 rounded-full bg-blue-600 ${pulsating ? 'animate-ping' : ''}`}></div>
@@ -235,7 +226,6 @@ export default function SOS() {
 					</h1>
 				</div>
 
-				{/* Current Location Card */}
 				<div className="mb-8 bg-slate-800/60 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 shadow-lg relative overflow-hidden">
 					<div className="absolute right-0 top-0 w-20 h-20 bg-red-500/10 rounded-bl-full"></div>
 					<h2 className="text-xl font-bold text-red-400 flex items-center mb-3">
@@ -268,7 +258,6 @@ export default function SOS() {
 					</div>
 				</div>
 
-				{/* SOS Form */}
 				<div className="mb-8 relative">
 					<div className="absolute -inset-1 bg-gradient-to-r from-red-500 to-amber-500 rounded-xl blur-md opacity-50"></div>
 					<div className="relative bg-slate-900 rounded-xl p-6 shadow-lg border border-slate-700/50">
@@ -349,7 +338,6 @@ export default function SOS() {
 					</div>
 				</div>
 
-				{/* My SOS History */}
 				<div className="mb-8">
 					<h2 className="text-2xl font-bold mb-6 text-gray-100 flex items-center">
 						<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -431,7 +419,6 @@ export default function SOS() {
 											</div>
 										</div>
 
-										{/* Actions */}
 										<div className="flex space-x-3 pt-2">
 											{!sos.isResolved && (
 												<button
@@ -459,7 +446,6 @@ export default function SOS() {
 											)}
 										</div>
 
-										{/* Read receipts */}
 										{sosReadReceipts[sos._id] && sosReadReceipts[sos._id].length > 0 && (
 											<div className="mt-4 bg-slate-700/30 rounded-lg p-4">
 												<h4 className="flex items-center text-sm text-blue-300 mb-3">
@@ -482,7 +468,6 @@ export default function SOS() {
 											</div>
 										)}
 
-										{/* Responding volunteers */}
 										{!sos.isResolved && hasResponders(sos._id) && (
 											<div className="mt-4 bg-slate-700/30 rounded-lg p-4">
 												<h4 className="flex items-center text-sm text-green-300 mb-3">
@@ -528,7 +513,6 @@ export default function SOS() {
 					)}
 				</div>
 
-				{/* Custom CSS for animations */}
 				<style jsx>{`
 					@keyframes pulseSlow {
 						0%, 100% { opacity: 1; }

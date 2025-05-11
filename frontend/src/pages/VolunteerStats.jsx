@@ -45,10 +45,8 @@ const VolunteerStats = () => {
       try {
         setLoading(true);
         
-        // This would be replaced with an actual API call when you implement the backend
-        // For now, we're simulating stats data
         setTimeout(() => {
-          // Simulated data
+
           const simulatedStats = {
             totalResponses: Math.floor(Math.random() * 50) + 10,
             resolvedCases: Math.floor(Math.random() * 40) + 5,
@@ -74,13 +72,7 @@ const VolunteerStats = () => {
           setLoading(false);
         }, 1000);
         
-        // When you implement the actual API endpoint, use this:
-        /*
-        const response = await axios.get("http://localhost:5000/api/volunteers/stats", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setStats(response.data);
-        */
+
         
       } catch (error) {
         console.error("Error fetching volunteer statistics:", error);
@@ -118,7 +110,7 @@ const VolunteerStats = () => {
       </Box>
 
       <Grid container spacing={4}>
-        {/* Summary Cards */}
+
         <Grid item xs={12}>
           <Grid container spacing={3}>
             <Grid item xs={12} md={4}>
@@ -171,7 +163,7 @@ const VolunteerStats = () => {
           </Grid>
         </Grid>
         
-        {/* Response Rate Card */}
+
         <Grid item xs={12} md={6}>
           <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
             <Typography variant="h6" gutterBottom>Response Rate</Typography>
@@ -203,7 +195,6 @@ const VolunteerStats = () => {
           </Paper>
         </Grid>
         
-        {/* Response Types Pie Chart */}
         <Grid item xs={12} md={6}>
           <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
             <Typography variant="h6" gutterBottom>SOS Categories</Typography>
@@ -230,7 +221,6 @@ const VolunteerStats = () => {
           </Paper>
         </Grid>
         
-        {/* Weekly Activity Chart */}
         <Grid item xs={12}>
           <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>Weekly Activity</Typography>
@@ -253,8 +243,7 @@ const VolunteerStats = () => {
             </ResponsiveContainer>
           </Paper>
         </Grid>
-        
-        {/* Achievement Card */}
+
         <Grid item xs={12}>
           <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>Your Achievements</Typography>

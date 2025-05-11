@@ -9,7 +9,6 @@ export default function ActiveSOS() {
   const [loading, setLoading] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(null);
 
-  // Function to fetch active SOS cases
   const fetchActiveCases = async () => {
     try {
       const res = await fetch(
@@ -34,19 +33,17 @@ export default function ActiveSOS() {
       setLoading(false);
     }
   };
-
-  // Set up initial fetch and refresh interval
   useEffect(() => {
     fetchActiveCases();
     
-    // Set up auto-refresh every 30 seconds
+
     const interval = setInterval(() => {
       fetchActiveCases();
     }, 30000);
     
     setRefreshInterval(interval);
     
-    // Clean up interval on component unmount
+
     return () => {
       if (refreshInterval) {
         clearInterval(refreshInterval);
@@ -54,19 +51,17 @@ export default function ActiveSOS() {
     };
   }, []);
 
-  // Handle manual refresh
+
   const handleRefresh = () => {
     toast.success("Refreshing active cases...");
     fetchActiveCases();
   };
 
-  // Format timestamp to readable date/time
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
     return date.toLocaleString();
   };
 
-  // Calculate time elapsed since SOS was created
   const getTimeElapsed = (createdAt) => {
     const created = new Date(createdAt);
     const now = new Date();
@@ -165,8 +160,7 @@ export default function ActiveSOS() {
                   <p className="font-medium mb-1">Message</p>
                   <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">{sos.message || "No message provided"}</p>
                 </div>
-                
-                {/* Responders section */}
+
                 <div>
                   <p className="font-medium mb-2">Responders ({sos.acceptedBy?.length || 0})</p>
                   {sos.acceptedBy && sos.acceptedBy.length > 0 ? (

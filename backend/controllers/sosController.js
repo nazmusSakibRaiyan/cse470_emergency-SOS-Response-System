@@ -145,7 +145,6 @@ export const setAsResolved = async (req, res) => {
 			});
 
 			for (const volunteer of volunteers) {
-				// Create notification record
 				const notification = new Notification({
 					recipient: volunteer._id,
 					type: "SOS",

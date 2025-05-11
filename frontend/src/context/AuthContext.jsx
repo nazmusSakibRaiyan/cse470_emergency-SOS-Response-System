@@ -1,4 +1,4 @@
-// src/context/AuthContext.js
+
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -14,13 +14,13 @@ export const AuthProvider = ({ children }) => {
 	const navigate = useNavigate();
 	const [user, setUser] = useState(null);
 	const [token, setToken] = useState(localStorage.getItem("token") || null);
-	const [loading, setLoading] = useState(true); // Add loading state
+	const [loading, setLoading] = useState(true); 
 
 	useEffect(() => {
 		if (token) {
 			fetchUserData();
 		} else {
-			setLoading(false); // No token, stop loading
+			setLoading(false); 
 		}
 	}, [token]);
 
@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }) => {
 			const baseURI =
 				process.env.NODE_ENV === "development"
 					? "http://localhost:5000"
-					: ""; //student Id: 21201197
+					: ""; 
 			const res = await fetch(baseURI + "/api/auth/user", {
 				method: "GET",
 				headers: {
@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }) => {
 			logout();
 			toast.error("Failed to fetch user data.");
 		} finally {
-			setLoading(false); // Stop loading after fetching user data
+			setLoading(false); 
 		}
 	};
 

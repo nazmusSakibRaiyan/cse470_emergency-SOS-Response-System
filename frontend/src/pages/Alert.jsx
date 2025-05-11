@@ -34,7 +34,6 @@ const Alert = () => {
 		}
 	}, [user, loading, navigate]);
 
-	// Fetch unresolved SOS alerts
 	useEffect(() => {
 		const fetchUnresolvedSOS = async () => {
 			setIsLoading(true);
@@ -57,7 +56,6 @@ const Alert = () => {
 					console.log("SOS data received:", data);
 					setNotifications(data);
 
-					// Check if the volunteer has already accepted any of these SOS alerts
 					if (Array.isArray(data) && user && user._id) {
 						data.forEach((sos) => {
 							if (sos.acceptedBy && sos.acceptedBy.includes(user._id)) {
@@ -87,18 +85,16 @@ const Alert = () => {
 		}
 
 		return () => {
-			// Clean up location tracking intervals when component unmounts
 			Object.values(locationIntervalRefs.current).forEach((interval) => {
 				clearInterval(interval);
 			});
 		};
 	}, [token, user]);
 
-	// Listen for socket events
 	useEffect(() => {
 		if (socket) {
 			socket.on("newSOS", (data) => {
-				// Play alert sound on new SOS
+
 				const audio = new Audio('/alert-sound.mp3');
 				audio.play().catch(e => console.log('Audio play prevented by browser policy'));
 				
@@ -108,7 +104,6 @@ const Alert = () => {
 				setNotifications((prev) => [data, ...prev]);
 			});
 
-			// Listen for SOS resolution notifications
 			socket.on("sosResolved", (data) => {
 				toast.success(`SOS alert has been resolved.`);
 
@@ -140,14 +135,13 @@ const Alert = () => {
 		};
 	}, [socket]);
 
-	// Start sending periodic location updates after accepting an SOS
 	const startLocationTracking = (sosId) => {
-		// Clear any existing interval for this SOS
+
 		if (locationIntervalRefs.current[sosId]) {
 			clearInterval(locationIntervalRefs.current[sosId]);
 		}
 
-		// Function to send current location
+
 		const sendLocation = () => {
 			if (navigator.geolocation) {
 				navigator.geolocation.getCurrentPosition(
@@ -165,10 +159,9 @@ const Alert = () => {
 			}
 		};
 
-		// Send location immediately
 		sendLocation();
 
-		// Then send every 30 seconds
+
 		const intervalId = setInterval(sendLocation, 30000);
 		locationIntervalRefs.current[sosId] = intervalId;
 	};
@@ -191,7 +184,7 @@ const Alert = () => {
 			if (res.ok) {
 				toast.success("SOS accepted successfully!");
 
-				// Update UI to show this SOS as accepted
+
 				setNotifications((prev) =>
 					prev.map((sos) =>
 						sos._id === sosId
@@ -203,10 +196,9 @@ const Alert = () => {
 					)
 				);
 
-				// Add to set of accepted SOS
 				setAcceptedSOS((prev) => new Set([...prev, sosId]));
 
-				// Start sending location updates
+		
 				startLocationTracking(sosId);
 			} else {
 				toast.error("Failed to accept SOS.");
@@ -233,20 +225,17 @@ const Alert = () => {
 			if (res.ok) {
 				toast.success("SOS marked as resolved!");
 
-				// Stop location tracking for this SOS
 				if (locationIntervalRefs.current[sosId]) {
 					clearInterval(locationIntervalRefs.current[sosId]);
 					delete locationIntervalRefs.current[sosId];
 				}
 
-				// Remove from accepted SOS set
 				setAcceptedSOS((prev) => {
 					const updated = new Set(prev);
 					updated.delete(sosId);
 					return updated;
 				});
 
-				// Remove from notifications
 				setNotifications((prev) =>
 					prev.filter((sos) => sos._id !== sosId)
 				);
@@ -258,13 +247,12 @@ const Alert = () => {
 		}
 	};
 
-	// Helper to format time
 	const formatTime = (dateString) => {
 		const date = new Date(dateString);
 		return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 	};
 
-	// Helper to get elapsed time
+
 	const getElapsedTime = (dateString) => {
 		const now = new Date();
 		const past = new Date(dateString);
@@ -294,7 +282,6 @@ const Alert = () => {
 	return (
 		<div className="p-4 bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen text-white">
 			<div className="max-w-7xl mx-auto">
-				{/* Header with animated emergency lights effect */}
 				<div className="relative flex items-center justify-center mb-8 py-4 border-b border-red-500/30">
 					<div className={`absolute -left-2 w-4 h-4 rounded-full bg-red-600 ${pulsating ? 'animate-ping' : ''}`}></div>
 					<div className={`absolute -right-2 w-4 h-4 rounded-full bg-blue-600 ${pulsating ? 'animate-ping' : ''}`}></div>
@@ -323,7 +310,6 @@ const Alert = () => {
 					</div>
 				)}
 
-				{/* Main content */}
 				{isLoading ? (
 					<div className="flex flex-col items-center justify-center py-12">
 						<div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-500 mb-4"></div>
@@ -381,13 +367,11 @@ const Alert = () => {
 										key={notification?._id || `sos-${Math.random()}`}
 										className="bg-slate-800/70 backdrop-blur-sm rounded-xl overflow-hidden border-l-4 border-red-500 shadow-lg relative group"
 									>
-										{/* Emergency indicator pulse */}
 										<div className="absolute top-3 right-3 flex items-center">
 											<span className="animate-ping absolute h-3 w-3 rounded-full bg-red-400 opacity-75"></span>
 											<span className="relative rounded-full h-3 w-3 bg-red-500"></span>
 										</div>
 										
-										{/* Header */}
 										<div className="bg-gradient-to-r from-red-900/40 to-red-800/20 px-5 py-4 flex justify-between items-center">
 											<div className="flex items-center">
 												<AlertTriangle className="text-red-500 mr-2" size={20} />
@@ -401,9 +385,8 @@ const Alert = () => {
 											)}
 										</div>
 										
-										{/* Body */}
 										<div className="p-5 space-y-4">
-											{/* Requester info */}
+				
 											{notification?.user ? (
 												<div className="flex items-center space-x-3 bg-slate-700/30 p-3 rounded-lg">
 													<div className="bg-slate-600/50 p-2 rounded-full">
@@ -429,16 +412,14 @@ const Alert = () => {
 													<p className="text-gray-400">User information not available</p>
 												</div>
 											)}
-											
-											{/* Message */}
+
 											<div className="bg-slate-700/30 p-4 rounded-lg">
 												<h4 className="text-sm text-gray-400 mb-1">EMERGENCY MESSAGE</h4>
 												<p className="text-white">
 													{notification?.message || "No message provided"}
 												</p>
 											</div>
-											
-											{/* Location */}
+
 											{notification?.coordinates && (
 												<div className="bg-slate-700/30 p-4 rounded-lg">
 													<h4 className="text-sm text-gray-400 mb-1">LOCATION</h4>
@@ -459,7 +440,7 @@ const Alert = () => {
 												</div>
 											)}
 											
-											{/* Response info */}
+		
 											<div className="flex items-center space-x-2 bg-slate-700/20 p-2 rounded-lg">
 												<Users className="text-blue-400" size={16} />
 												<span className="text-gray-300 text-sm">
@@ -469,8 +450,7 @@ const Alert = () => {
 												</span>
 											</div>
 										</div>
-										
-										{/* Action buttons */}
+
 										<div className="grid grid-cols-2 divide-x divide-slate-700/50 mt-2">
 											{notification?.user && user && notification.user._id === user._id ? (
 												<button
@@ -514,8 +494,7 @@ const Alert = () => {
 						)}
 					</>
 				)}
-				
-				{/* Custom CSS for animations */}
+
 				<style jsx>{`
 					@keyframes pulseSlow {
 						0%, 100% { opacity: 1; }

@@ -48,7 +48,6 @@ const SOSDetails = () => {
 		fetchSOSDetails();
 	}, [id, token]);
 
-	// Helper to format time
 	const formatTime = (dateString) => {
 		const date = new Date(dateString);
 		return date.toLocaleString('en-US', { 
@@ -142,7 +141,6 @@ const SOSDetails = () => {
 	return (
 		<div className="p-4 bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen text-white">
 			<div className="max-w-5xl mx-auto">
-				{/* Header with animated emergency lights effect */}
 				<div className="relative flex items-center justify-center mb-8 py-4 border-b border-red-500/30">
 					<div className={`absolute -left-2 w-4 h-4 rounded-full bg-red-600 ${pulsating ? 'animate-ping' : ''}`}></div>
 					<div className={`absolute -right-2 w-4 h-4 rounded-full bg-blue-600 ${pulsating ? 'animate-ping' : ''}`}></div>
@@ -152,7 +150,6 @@ const SOSDetails = () => {
 					</h1>
 				</div>
 
-				{/* Back button */}
 				<button 
 					onClick={() => navigate(-1)} 
 					className="mb-6 bg-slate-800/60 backdrop-blur-sm hover:bg-slate-700 text-gray-300 hover:text-white px-4 py-2 rounded-lg flex items-center transition-colors"
@@ -162,9 +159,9 @@ const SOSDetails = () => {
 				</button>
 
 				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-					{/* Main info column */}
+
 					<div className="lg:col-span-2">
-						{/* Status indicator */}
+
 						<div className={`mb-4 inline-flex items-center text-sm px-4 py-1.5 rounded-full ${
 							isResolved ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'
 						}`}>
@@ -172,7 +169,7 @@ const SOSDetails = () => {
 							{isResolved ? 'Resolved' : 'Active Emergency'}
 						</div>
 
-						{/* Main details card */}
+
 						<div className="bg-slate-800/60 backdrop-blur-sm rounded-xl overflow-hidden border border-slate-700/50 mb-6">
 							<div className="bg-gradient-to-r from-red-900/40 to-red-800/20 px-5 py-4">
 								<div className="flex items-center justify-between">
@@ -190,13 +187,13 @@ const SOSDetails = () => {
 							</div>
 							
 							<div className="p-5">
-								{/* Emergency message */}
+
 								<div className="mb-6 bg-slate-700/30 p-4 rounded-lg border border-slate-600/30">
 									<h3 className="text-sm uppercase text-gray-400 mb-1">Emergency Message</h3>
 									<p className="text-lg text-white font-medium">{sosDetails.message}</p>
 								</div>
 
-								{/* Posted by */}
+
 								<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
 									<div className="flex items-center">
 										<div className="bg-slate-700/50 p-2.5 rounded-full mr-3">
@@ -219,11 +216,11 @@ const SOSDetails = () => {
 									)}
 								</div>
 
-								{/* Location details */}
+			
 								<div className="mb-6">
 									<h3 className="text-sm uppercase text-gray-400 mb-3">Location</h3>
 									<div className="bg-slate-700/30 rounded-lg overflow-hidden">
-										{/* Static map placeholder - would be replaced with actual map */}
+										
 										<div className="h-48 bg-slate-700 relative">
 											<div className="absolute inset-0 flex items-center justify-center">
 												<div className="h-8 w-8 bg-red-500 rounded-full animate-pulse-slow border-2 border-white flex items-center justify-center">
@@ -249,7 +246,6 @@ const SOSDetails = () => {
 									</div>
 								</div>
 
-								{/* Emergency timing */}
 								{sosDetails.createdAt && (
 									<div className="grid grid-cols-2 gap-4 mb-6">
 										<div className="bg-slate-700/30 p-4 rounded-lg">
@@ -266,7 +262,6 @@ const SOSDetails = () => {
 						</div>
 					</div>
 
-					{/* Responders column */}
 					<div className="lg:col-span-1">
 						<div className="bg-slate-800/60 backdrop-blur-sm rounded-xl overflow-hidden border border-slate-700/50 h-full">
 							<div className="bg-gradient-to-r from-blue-900/40 to-blue-800/20 px-5 py-4 flex justify-between items-center">
@@ -359,7 +354,6 @@ const SOSDetails = () => {
 				</div>
 			</div>
 			
-			{/* Custom CSS for animations */}
 			<style jsx>{`
 				@keyframes pulseSlow {
 					0%, 100% { opacity: 1; }

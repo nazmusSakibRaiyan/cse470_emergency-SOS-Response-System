@@ -7,7 +7,6 @@ export default function UserApprovals() {
   const [pendingUsers, setPendingUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch pending users on component mount
   useEffect(() => {
     fetchPendingUsers();
   }, []);
@@ -51,7 +50,7 @@ export default function UserApprovals() {
 
       if (res.ok) {
         toast.success("User approved successfully");
-        fetchPendingUsers(); // Refresh the list
+        fetchPendingUsers(); 
       } else {
         toast.error("Failed to approve user");
       }
@@ -78,7 +77,7 @@ export default function UserApprovals() {
 
       if (res.ok) {
         toast.success("User rejected successfully");
-        fetchPendingUsers(); // Refresh the list
+        fetchPendingUsers(); 
       } else {
         toast.error("Failed to reject user");
       }

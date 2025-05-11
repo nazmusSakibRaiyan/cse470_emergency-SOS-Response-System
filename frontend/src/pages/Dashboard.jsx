@@ -25,14 +25,12 @@ const Dashboard = () => {
       try {
         setLoading(true);
         
-        // Fetch recent notifications
         const notificationsResponse = await axios.get("http://localhost:5000/api/notifications/recent", {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        setNotifications(notificationsResponse.data.slice(0, 5)); // Get top 5 notifications
+        setNotifications(notificationsResponse.data.slice(0, 5)); 
         
-        // Fetch active SOS cases for volunteers
         if (user.role === "volunteer") {
           const sosResponse = await axios.get("http://localhost:5000/api/sos/active", {
             headers: { Authorization: `Bearer ${token}` }
@@ -40,7 +38,6 @@ const Dashboard = () => {
           setActiveSOSCases(sosResponse.data);
         }
         
-        // Fetch user stats
         const statsPromises = [
           axios.get("http://localhost:5000/api/sos/stats", {
             headers: { Authorization: `Bearer ${token}` }
@@ -68,7 +65,6 @@ const Dashboard = () => {
     fetchDashboardData();
   }, [user, token]);
 
-  // Format date to display in a readable format
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleString();
@@ -88,7 +84,7 @@ const Dashboard = () => {
   
   return (
     <div className="bg-gradient-to-b from-gray-50 to-gray-100 min-h-screen pb-12">
-      {/* Hero header */}
+
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-12 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
@@ -119,59 +115,13 @@ const Dashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Stats Overview */}
+  
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-md overflow-hidden border-t-4 border-green-500">
-            <div className="p-6">
-              <div className="flex items-center">
-                <div className="bg-green-100 rounded-xl p-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-5">
-                  <div className="text-3xl font-bold text-gray-900">{stats.totalSOSResolved}</div>
-                  <div className="text-sm font-medium text-gray-500">SOS Cases Resolved</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md overflow-hidden border-t-4 border-blue-500">
-            <div className="p-6">
-              <div className="flex items-center">
-                <div className="bg-blue-100 rounded-xl p-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                  </svg>
-                </div>
-                <div className="ml-5">
-                  <div className="text-3xl font-bold text-gray-900">{stats.activeVolunteers}</div>
-                  <div className="text-sm font-medium text-gray-500">Active Volunteers</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md overflow-hidden border-t-4 border-purple-500">
-            <div className="p-6">
-              <div className="flex items-center">
-                <div className="bg-purple-100 rounded-xl p-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-purple-600" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                  </svg>
-                </div>
-                <div className="ml-5">
-                  <div className="text-3xl font-bold text-gray-900">{stats.userContacts}</div>
-                  <div className="text-sm font-medium text-gray-500">Emergency Contacts</div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Removed SOS Cases Resolved, Active Volunteers, and Emergency Contacts stat boxes */}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* User Profile Card */}
+
           <div className="bg-white rounded-xl shadow-md overflow-hidden">
             <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-8 text-white">
               <div className="flex flex-col items-center">
@@ -226,9 +176,8 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Quick Actions & Modules */}
           <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Quick Actions Card */}
+
             <div className="bg-white rounded-xl shadow-md overflow-hidden">
               <div className="px-6 py-4 bg-gradient-to-r from-red-600 to-red-700 text-white">
                 <h2 className="text-lg font-semibold">Emergency Actions</h2>
@@ -310,7 +259,6 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Admin Tools or Active SOS Cases based on user role */}
             {user?.role === "admin" ? (
               <div className="bg-white rounded-xl shadow-md overflow-hidden">
                 <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white">
@@ -463,7 +411,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Recent Notifications */}
         <div>
           <h2 className="text-xl font-bold text-gray-800 mb-4">Recent Notifications</h2>
           <div className="bg-white rounded-xl shadow-md overflow-hidden">

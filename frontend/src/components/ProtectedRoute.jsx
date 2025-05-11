@@ -5,15 +5,13 @@ const ProtectedRoute = ({ adminOnly }) => {
 	const { user, loading } = useAuth();
 
 	if (loading) {
-		return <div>Loading...</div>; // Show a loading indicator while fetching user data
+		return <div>Loading...</div>; 
 	}
 
-	// Not authenticated
 	if (!user) {
 		return <Navigate to="/login" />;
 	}
 
-	// Admin only route but user is not admin
 	if (adminOnly && user.role !== "admin") {
 		return <Navigate to="/dashboard" />;
 	}

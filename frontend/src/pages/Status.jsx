@@ -8,7 +8,6 @@ export default function Status() {
 	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
-		// Fetch the current status of the user
 		const fetchStatus = async () => {
 			try {
 				const res = await fetch("http://localhost:5000/api/auth/user", {

@@ -7,8 +7,8 @@ export default function SafetyReports() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState({
-    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Last 30 days
-    endDate: new Date().toISOString().split('T')[0] // Today
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], 
+    endDate: new Date().toISOString().split('T')[0] 
   });
   const [stats, setStats] = useState({
     total: 0,
@@ -40,12 +40,10 @@ export default function SafetyReports() {
         const data = await res.json();
         setReports(data.report);
         
-        // Calculate stats
         const total = data.report.length;
         const resolved = data.report.filter(sos => sos.isResolved).length;
         const pending = total - resolved;
         
-        // Calculate average response time for resolved SOS
         let totalResponseTime = 0;
         let resolvedWithTime = 0;
         
@@ -58,7 +56,7 @@ export default function SafetyReports() {
         });
         
         const averageResponseTime = resolvedWithTime > 0 
-          ? Math.floor(totalResponseTime / resolvedWithTime / (1000 * 60)) // in minutes
+          ? Math.floor(totalResponseTime / resolvedWithTime / (1000 * 60)) 
           : 0;
         
         setStats({ total, resolved, pending, averageResponseTime });
@@ -86,7 +84,6 @@ export default function SafetyReports() {
       return;
     }
     
-    // Convert reports to CSV format
     const headers = ["User", "Email", "Message", "Location", "Status", "Created At", "Resolved At"];
     const csvRows = [headers];
     
@@ -103,7 +100,6 @@ export default function SafetyReports() {
       csvRows.push(row);
     });
     
-    // Convert to CSV string
     const csvContent = csvRows
       .map(row => row
         .map(cell => typeof cell === 'string' && cell.includes(',') ? `"${cell}"` : cell)
@@ -111,7 +107,6 @@ export default function SafetyReports() {
       )
       .join('\n');
     
-    // Create and download the CSV file
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -163,7 +158,6 @@ export default function SafetyReports() {
         </div>
       </div>
       
-      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-4 rounded-lg shadow-md">
           <h3 className="text-gray-500 text-sm mb-1">Total SOS Cases</h3>

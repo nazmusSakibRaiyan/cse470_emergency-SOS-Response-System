@@ -27,7 +27,7 @@ const Profile = () => {
             });
             setIsLoading(false);
         } else {
-            // If user data isn't loaded yet, try fetching it
+    
             const fetchUserData = async () => {
                 try {
                     const response = await axios.get("http://localhost:5000/api/auth/user", {
@@ -75,10 +75,8 @@ const Profile = () => {
             );
             console.log("Profile update response:", response.data);
             toast.success("Profile updated successfully!");
-            // Update user context if your AuthContext supports it
+  
             if (response.data && response.data.user) {
-                // Since we can't directly update the user in AuthContext from here,
-                // we can reload the page to get fresh user data
                 window.location.reload();
             }
         } catch (error) {
@@ -94,8 +92,8 @@ const Profile = () => {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 toast.success("Account deleted successfully.");
-                logout(); // Log out the user
-                navigate("/"); // Redirect to homepage
+                logout(); 
+                navigate("/");
             } catch (error) {
                 console.error("Error deleting account:", error);
                 toast.error(error.response?.data?.message || "Failed to delete account.");

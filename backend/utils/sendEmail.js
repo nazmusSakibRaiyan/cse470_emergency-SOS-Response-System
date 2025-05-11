@@ -24,15 +24,9 @@ const transporter = nodemailer.createTransport({
 
 
 const MAX_RETRIES = 3;
-const RETRY_DELAY = 2000; // milliseconds
+const RETRY_DELAY = 2000; 
 
-/**
- * Retry function with exponential backoff
- * @param {Function} fn - Function to retry
- * @param {number} retries - Number of retries left
- * @param {number} delay - Delay between retries in ms
- * @param {Array} args - Arguments to pass to the function
- */
+
 const retry = async (fn, retries, delay, ...args) => {
   try {
     return await fn(...args);
@@ -40,7 +34,6 @@ const retry = async (fn, retries, delay, ...args) => {
 
     if (error.responseCode === 421 && retries > 0) {
       console.log(`Temporary email error, retrying (${MAX_RETRIES - retries + 1}/${MAX_RETRIES})...`);
-      // Wait for the delay
       await new Promise(resolve => setTimeout(resolve, delay));
 
       return retry(fn, retries - 1, delay * 1.5, ...args);
@@ -116,15 +109,12 @@ export const sendSOSEmergencyAlert = async (to, userName, message, coordinates, 
   
   return sendEmail(to, subject, textContent, htmlContent).catch(error => {
     console.error("Failed to send emergency alert:", error);
-    // Don't throw - prevent crashes for critical functionality
     return null;
   });
 };
 
-// Send SMS via email-to-SMS gateways (major US carriers)
 export const sendSMS = async (phoneNumber, message, carrier) => {
   try {
-    // Common email-to-SMS gateways for major carriers
     const carriers = {
       'att': `${phoneNumber}@txt.att.net`,
       'tmobile': `${phoneNumber}@tmomail.net`,
@@ -137,12 +127,10 @@ export const sendSMS = async (phoneNumber, message, carrier) => {
       'virgin': `${phoneNumber}@vmobl.com`,
     };
     
-    // If carrier is known, use specific gateway
     let recipient;
     if (carrier && carriers[carrier.toLowerCase()]) {
       recipient = carriers[carrier.toLowerCase()];
     } else {
-      // Try multiple carriers if unsure
       recipient = [
         carriers.att,
         carriers.tmobile, 

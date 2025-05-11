@@ -76,15 +76,14 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user
+
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "User not found" });
 
-    // Check password
+ 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    // Check if volunteer is verified and approved
     if (user.role === "volunteer" && (!user.isVerified || !user.isApproved)) {
       return res.status(403).json({ 
         message: "Your volunteer account is pending admin verification. You will be notified once your account is approved." 
@@ -94,10 +93,10 @@ export const login = async (req, res) => {
     // Generate OTP
     const otp = generateOTP();
     user.otp = otp;
-    user.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiry
+    user.otpExpires = new Date(Date.now() + 5 * 60 * 1000); 
     await user.save();
 
-    // Send OTP via Email
+
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
@@ -153,10 +152,10 @@ export const verifyOTP = async (req, res) => {
 };
 
 
-// Get User Info (Protected Route)
+
 export const getUser = async (req, res) => {
   try {
-    // req.user is set by authMiddleware after decoding the token
+
     const user = await User.findById(req.user.userId).select("-password"); 
 
     if (!user) {

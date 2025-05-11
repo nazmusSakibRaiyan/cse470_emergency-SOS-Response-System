@@ -93,13 +93,12 @@ export default function UserManagement() {
 						<th className="p-2 border">Role</th>
 						<th className="p-2 border">Phone</th>
 						<th className="p-2 border">Status</th>{" "}
-						{/* New column */}
 						<th className="p-2 border">Actions</th>
 					</tr>
 				</thead>
 				<tbody>
 					{users.map((u) =>
-						u._id === user?._id ? null : ( // 🛑 if current user, don't render row
+						u._id === user?._id ? null : ( 
 							<tr key={u._id}>
 								<td className="p-2 border">{u.name}</td>
 								<td className="p-2 border">{u.email}</td>

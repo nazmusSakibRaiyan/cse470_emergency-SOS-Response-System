@@ -4,7 +4,6 @@ import SOS from '../models/SOS.js';
 import { io } from '../server.js';
 import { sendEmail } from '../utils/sendEmail.js';
 
-// Get all notifications for the current user
 export const getUserNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -20,7 +19,6 @@ export const getUserNotifications = async (req, res) => {
   }
 };
 
-// Mark notification as read
 export const markNotificationAsRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
@@ -47,7 +45,6 @@ export const markNotificationAsRead = async (req, res) => {
   }
 };
 
-// Mark all notifications as read
 export const markAllAsRead = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -64,7 +61,6 @@ export const markAllAsRead = async (req, res) => {
   }
 };
 
-// Create SOS notification and send email/SMS alerts
 export const createSOSNotification = async (sosId, userId, volunteers = []) => {
   try {
     const sos = await SOS.findById(sosId).populate('user', 'name email phone');
@@ -75,7 +71,6 @@ export const createSOSNotification = async (sosId, userId, volunteers = []) => {
       return;
     }
 
-    // Create notification for volunteers
     for (const volunteerId of volunteers) {
       const volunteer = await User.findById(volunteerId);
       
@@ -96,7 +91,6 @@ export const createSOSNotification = async (sosId, userId, volunteers = []) => {
         
         await notification.save();
         
-        // Send real-time notification if volunteer is online
         if (volunteer.socketId) {
           io.to(volunteer.socketId).emit('sosAlert', {
             notification,
@@ -104,7 +98,6 @@ export const createSOSNotification = async (sosId, userId, volunteers = []) => {
           });
         }
         
-        // Send email to volunteer
         sendEmail(
           volunteer.email,
           'URGENT: SOS Emergency Alert',
@@ -113,14 +106,12 @@ export const createSOSNotification = async (sosId, userId, volunteers = []) => {
       }
     }
     
-    // Send notifications to emergency contacts (handled by contactController)
     
   } catch (error) {
     console.error('Error in createSOSNotification:', error);
   }
 };
 
-// Create an automated reminder for pending responses
 export const createReminderNotification = async (userId, relatedId, message, onModel = 'SOS') => {
   try {
     const user = await User.findById(userId);
@@ -141,12 +132,11 @@ export const createReminderNotification = async (userId, relatedId, message, onM
     
     await notification.save();
     
-    // Send real-time notification if user is online
     if (user.socketId) {
       io.to(user.socketId).emit('reminder', notification);
     }
     
-    // Send email reminder
+
     sendEmail(
       user.email,
       'Reminder: Action Required',
@@ -158,7 +148,6 @@ export const createReminderNotification = async (userId, relatedId, message, onM
   }
 };
 
-// Track SOS alert read receipts
 export const updateSOSReadStatus = async (req, res) => {
   try {
     const { sosId } = req.params;

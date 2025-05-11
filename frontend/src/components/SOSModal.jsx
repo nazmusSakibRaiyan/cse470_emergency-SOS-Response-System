@@ -7,11 +7,10 @@ const SOSModal = () => {
 	const { sosData, hideSOSModal } = useSOSModal();
 	const { user, token } = useAuth();
 
-	// Add logging to track when modal should display
 	useEffect(() => {
 		if (sosData) {
 			console.log("SOS Modal should be displayed with data:", sosData);
-			// Play alert sound when modal appears
+
 			const audio = new Audio('/emergency-alarm.mp3');
 			audio.play().catch(err => {
 				console.log("Audio playback error:", err);
@@ -39,7 +38,6 @@ const SOSModal = () => {
 				toast.success("SOS accepted successfully!");
 				hideSOSModal();
 
-				// Redirect to Alert page to see more details
 				window.location.href = "/alert";
 			} else {
 				const errorData = await response.json();

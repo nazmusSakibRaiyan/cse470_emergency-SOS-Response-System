@@ -12,7 +12,7 @@ export default function VolunteerVerification() {
     fetchUnverifiedVolunteers();
   }, []);
 
-  // Fetch all unverified volunteers
+
   const fetchUnverifiedVolunteers = async () => {
     try {
       setLoading(true);
@@ -39,7 +39,7 @@ export default function VolunteerVerification() {
     }
   };
 
-  // Handle volunteer verification
+
   const handleVerifyVolunteer = async (volunteerId) => {
     try {
       setCurrentAction(volunteerId);
@@ -55,7 +55,7 @@ export default function VolunteerVerification() {
 
       if (response.ok) {
         toast.success("Volunteer verified successfully");
-        // Remove the volunteer from the list
+
         setVolunteers(volunteers.filter((volunteer) => volunteer._id !== volunteerId));
       } else {
         const errorData = await response.json();
@@ -69,7 +69,7 @@ export default function VolunteerVerification() {
     }
   };
 
-  // Handle volunteer rejection
+
   const handleRejectVolunteer = async (volunteerId) => {
     try {
       if (!confirm("Are you sure you want to reject this volunteer? This action cannot be undone.")) {
@@ -89,7 +89,7 @@ export default function VolunteerVerification() {
 
       if (response.ok) {
         toast.success("Volunteer rejected successfully");
-        // Remove the volunteer from the list
+
         setVolunteers(volunteers.filter((volunteer) => volunteer._id !== volunteerId));
       } else {
         const errorData = await response.json();

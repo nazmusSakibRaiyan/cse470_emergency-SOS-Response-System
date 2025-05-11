@@ -7,7 +7,7 @@ export default function UserManagement() {
   const [users, setUsers] = useState([]);
   const [blacklistedUsers, setBlacklistedUsers] = useState([]);
 
-  // Fetch all normal users
+
   const fetchUsers = async () => {
     try {
       const res = await fetch("http://localhost:5000/api/user-management", {
@@ -25,7 +25,6 @@ export default function UserManagement() {
     }
   };
 
-  // Fetch all blacklisted users
   const fetchBlacklistedUsers = async () => {
     try {
       const res = await fetch("http://localhost:5000/api/blacklist-users", {
@@ -57,19 +56,13 @@ export default function UserManagement() {
         const responseData = await res.json();
         toast.success("User blacklisted successfully.");
         
-        // Find the blacklisted user in the current users array
         const blacklistedUser = users.find(user => user._id === id);
         
         if (blacklistedUser) {
-          // Update local state immediately
-          // Remove user from active users list
           setUsers(users.filter(user => user._id !== id));
-          
-          // Add user to blacklisted users with the blacklisted flag set
           const updatedUser = { ...blacklistedUser, blacklisted: true };
           setBlacklistedUsers([...blacklistedUsers, updatedUser]);
         } else {
-          // If for some reason we can't find the user, refresh both lists
           fetchUsers();
           fetchBlacklistedUsers();
         }
@@ -82,7 +75,6 @@ export default function UserManagement() {
     }
   };
 
-  // Remove user from blacklist
   const removeFromBlacklist = async (id) => {
     if (!window.confirm("Are you sure you want to remove this user from blacklist?")) return;
 
@@ -95,19 +87,14 @@ export default function UserManagement() {
       if (res.ok) {
         toast.success("User removed from blacklist successfully.");
         
-        // Find the user in the blacklisted users array
         const unblacklistedUser = blacklistedUsers.find(user => user._id === id);
         
         if (unblacklistedUser) {
-          // Update local state immediately
-          // Remove user from blacklisted users list
           setBlacklistedUsers(blacklistedUsers.filter(user => user._id !== id));
           
-          // Add user to active users with the blacklisted flag removed
           const updatedUser = { ...unblacklistedUser, blacklisted: false };
           setUsers([...users, updatedUser]);
         } else {
-          // If for some reason we can't find the user, refresh both lists
           fetchUsers();
           fetchBlacklistedUsers();
         }
@@ -129,7 +116,7 @@ export default function UserManagement() {
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-6 text-blue-600">User Management</h1>
 
-      {/* Active Users */}
+
       <h2 className="text-xl font-semibold mb-4 text-green-600">Active Users</h2>
       <table className="w-full border border-gray-300 mb-8">
         <thead>
@@ -169,7 +156,7 @@ export default function UserManagement() {
         </tbody>
       </table>
 
-      {/* Blacklisted Users */}
+
       <h2 className="text-xl font-semibold mb-4 text-red-600">Blacklisted Users</h2>
       <table className="w-full border border-gray-300">
         <thead>

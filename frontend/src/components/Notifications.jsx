@@ -17,7 +17,7 @@ const Notifications = () => {
   useEffect(() => {
     if (token) {
       fetchNotifications();
-      const interval = setInterval(fetchNotifications, 30000); // Refresh every 30 seconds
+      const interval = setInterval(fetchNotifications, 30000); 
       return () => clearInterval(interval);
     }
   }, [token]);
@@ -41,7 +41,6 @@ const Notifications = () => {
       console.log("Notifications response:", response.data);
       setNotifications(response.data);
       
-      // Use isRead instead of read to match the backend field name
       const unread = response.data.filter((notification) => !notification.isRead);
       setUnreadCount(unread.length);
     } catch (error) {
@@ -49,8 +48,6 @@ const Notifications = () => {
       setError("Failed to load notifications");
       
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
         console.error("Error response data:", error.response.data);
         console.error("Error response status:", error.response.status);
       }
@@ -89,7 +86,6 @@ const Notifications = () => {
       await markAsRead(notification._id);
     }
     
-    // Navigate based on notification type
     if (notification.type === "SOS") {
       navigate(`/sos/${notification.relatedId}`);
     } else if (notification.type === "chat") {
@@ -126,7 +122,6 @@ const Notifications = () => {
     }
   };
 
-  // Format the time to be more readable
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -146,7 +141,6 @@ const Notifications = () => {
     }
   };
 
-  // Get icon based on notification type
   const getNotificationIcon = (type) => {
     switch (type) {
       case "SOS":
@@ -160,7 +154,6 @@ const Notifications = () => {
     }
   };
 
-  // Get background color based on notification type
   const getNotificationBgColor = (type, read) => {
     const baseClass = read ? "bg-slate-800/40" : "bg-slate-700/60";
     
@@ -185,7 +178,7 @@ const Notifications = () => {
         onClick={() => {
           setShowNotifications(!showNotifications);
           if (!showNotifications) {
-            fetchNotifications(); // Refresh notifications when opening
+            fetchNotifications(); 
           }
         }}
         aria-label="Notifications"
@@ -283,7 +276,6 @@ const Notifications = () => {
         </div>
       )}
       
-      {/* Backdrop for closing notifications when clicked outside */}
       {showNotifications && (
         <div 
           className="fixed inset-0 z-40"

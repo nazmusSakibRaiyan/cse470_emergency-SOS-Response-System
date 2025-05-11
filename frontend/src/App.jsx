@@ -43,7 +43,6 @@ const App = () => (
 							<Route path="/login" element={<Login />} />
 							<Route path="/status" element={<Status />} />
 
-							{/* Protected routes for all authenticated users */}
 							<Route element={<ProtectedRoute />}>
 								<Route
 									path="/dashboard"
@@ -68,7 +67,6 @@ const App = () => (
 								/>
 							</Route>
 
-							{/* Protected routes for admin only */}
 							<Route
 								element={<ProtectedRoute adminOnly={true} />}
 							>
