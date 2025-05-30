@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
 
 const Login = () => {
@@ -99,8 +99,7 @@ const Login = () => {
 							placeholder="Password"
 							className="border p-3 w-full mb-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
 							required
-						/>
-						<button
+						/>						<button
 							onClick={handleLogin}
 							className={`w-full py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition ${
 								loading ? "opacity-50 cursor-not-allowed" : ""
@@ -109,6 +108,15 @@ const Login = () => {
 						>
 							{loading ? "Sending OTP..." : "Send OTP"}
 						</button>
+						
+						<div className="mt-4 text-center">
+							<Link
+								to="/forgot-password"
+								className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+							>
+								Forgot your password?
+							</Link>
+						</div>
 					</>
 				) : (
 					<>

@@ -8,6 +8,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import HomePage from "./pages/HomePage";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import { Toaster } from "react-hot-toast";
 import Contact from "./pages/Contact";
@@ -37,10 +39,11 @@ const App = () => (
 						<Navbar />
 						<SOSModal />
 						<Toaster position="top-right" />
-						<Routes>
-							<Route path="/" element={<HomePage />} />
+						<Routes>							<Route path="/" element={<HomePage />} />
 							<Route path="/register" element={<Register />} />
 							<Route path="/login" element={<Login />} />
+							<Route path="/forgot-password" element={<ForgotPassword />} />
+							<Route path="/reset-password/:token" element={<ResetPassword />} />
 							<Route path="/status" element={<Status />} />
 
 							<Route element={<ProtectedRoute />}>
