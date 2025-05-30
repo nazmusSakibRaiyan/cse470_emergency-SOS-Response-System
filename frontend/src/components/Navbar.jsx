@@ -196,11 +196,31 @@ const Navbar = () => {
 												</div>
 											)}
 										</div>
-									)}
-
-									<div className="px-3 py-2">
+									)}									<div className="px-3 py-2">
 										<Notifications />
 									</div>
+									
+									{/* Profile Picture */}
+									<Link to="/profile" className="flex items-center">
+										<div className="w-8 h-8 rounded-full overflow-hidden bg-gray-300 border-2 border-white">
+											{user.profilePicture ? (
+												<img
+													src={`http://localhost:5000${user.profilePicture}`}
+													alt="Profile"
+													className="w-full h-full object-cover"
+													onError={(e) => {
+														e.target.style.display = 'none';
+														e.target.nextSibling.style.display = 'flex';
+													}}
+												/>
+											) : null}
+											<div className={`w-full h-full flex items-center justify-center text-gray-500 ${user.profilePicture ? 'hidden' : 'flex'}`}>
+												<svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+													<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+												</svg>
+											</div>
+										</div>
+									</Link>
 									
 									<button
 										onClick={logout}

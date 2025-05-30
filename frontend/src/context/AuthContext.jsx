@@ -66,14 +66,26 @@ export const AuthProvider = ({ children }) => {
 		navigate("/login");
 		toast.success("Logged out successfully.");
 	};
-
 	const getUser = () => user;
 
 	const getToken = () => token;
 
+	const updateUser = (updatedUserData) => {
+		setUser(prevUser => ({
+			...prevUser,
+			...updatedUserData
+		}));
+	};
+
+	const refreshUserData = () => {
+		if (token) {
+			fetchUserData();
+		}
+	};
+
 	return (
 		<AuthContext.Provider
-			value={{ user, token, login, logout, loading, getUser, getToken }}
+			value={{ user, token, login, logout, loading, getUser, getToken, updateUser, refreshUserData }}
 		>
 			{children}
 		</AuthContext.Provider>

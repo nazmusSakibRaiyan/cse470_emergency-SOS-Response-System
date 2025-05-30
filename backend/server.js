@@ -28,6 +28,9 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// Serve static files for uploaded images
+app.use('/uploads', express.static('uploads'));
+
 mongoose
 	.connect(process.env.MONGO_URI)
 	.then(() => console.log("Connected to MongoDB"))
